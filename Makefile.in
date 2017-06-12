@@ -1,0 +1,45 @@
+CC=@CC@
+CFLAGS=@CFLAGS@
+CPPFLAGS=@CPPFLAGS@
+LDFLAGS=@LDFLAGS@
+LIBS=@LIBS@
+INSTALL_PFX=@prefix@
+
+MKDIR=mkdir -p
+RM=rm -rf
+INSTALL=install -p
+INSTALL_DATA=$(INSTALL) -m 644
+INSTALL_EXEC=$(INSTALL) -m 755
+
+ALIGNSTATS=alignstats
+OBJS=alignstats.o align.o alignlen.o bed.o coverage.o filter.o insertsize.o pairstats.o print.o processing.o report.o treemap.o
+INSTALL_PFX_BIN=$(INSTALL_PFX)/bin
+INSTALL_ALIGNSTATS=$(INSTALL_PFX_BIN)/$(ALIGNSTATS)
+
+.PHONY: all install uninstall cleanobjs clean distclean
+
+
+all: $(ALIGNSTATS)
+
+$(ALIGNSTATS): $(OBJS)
+	$(CC) -o $(ALIGNSTATS) $(OBJS) $(LDFLAGS) $(LIBS)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $< -o $@ $(CPPFLAGS)
+
+# installs PREFIX/bin/alignstats
+install: $(ALIGNSTATS)
+	$(MKDIR) $(INSTALL_PFX_BIN)
+	$(INSTALL_EXEC) $(ALIGNSTATS) $(INSTALL_PFX_BIN)
+
+uninstall: $(INSTALL_ALIGNSTATS)
+	$(RM) $(INSTALL_ALIGNSTATS)
+
+cleanobjs:
+	$(RM) $(OBJS)
+
+clean: cleanobjs
+	$(RM) $(ALIGNSTATS)
+
+distclean: clean
+	$(RM) autom4te.cache config.h configure config.log config.status

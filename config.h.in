@@ -1,0 +1,6 @@
+#ifndef _ALIGNSTATS_CONFIG_H
+#define _ALIGNSTATS_CONFIG_H
+
+#undef USE_PTHREAD
+
+#endif /* _ALIGNSTATS_CONFIG_H */
