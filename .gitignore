@@ -1,11 +1,11 @@
 alignstats
 autom4te.cache
 config.h
-configure
-hgsc.mk
-misc
-*.o
-Makefile
 config.log
 config.status
+configure
+hgsc.mk
+Makefile
+misc
+*.o
 README.html

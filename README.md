@@ -6,13 +6,14 @@ AlignStats produces various alignment, whole genome coverage, and capture
 coverage metrics for sequence alignment files in SAM, BAM, and CRAM format.
 This program is designed to serve reporting and quality control purposes in
 sequencing analysis pipelines at the Baylor College of Medicine Human Genome
-Sequencing Center. Descriptions of reported metrics can be found in ``doc/``.
+Sequencing Center (BCM-HGSC). Descriptions of reported metrics can be found in
+``doc/``.
 
-## Buiding
+## Building
 
 AlignStats requires a recent version of HTSlib (versions 1.3 and higher are
 known to work, version 1.4 or higher is suggested). The ``-p`` option for
-multithreading requires libpthread support with the pthread_barrier extention.
+multithreading requires libpthread support with the pthread_barrier extension.
 
 To build AlignStats, run:
 
@@ -89,3 +90,12 @@ Same as the first command, but the report will be printed to stdout.
 
 Only produce alignment statistics and whole genome coverage statistics
 (suppress capture coverage statistics) for ``sample.bam``.
+
+## Disclaimers
+
+While extensive testing and validation have been performed at the BCM-HGSC to
+confirm the accuracy of metrics reported by AlignStats, no guarantees of
+accuracy are made or implied.
+
+The set of metrics reported by AlignStats may change in the course of continued
+development by the BCM-HGSC.
