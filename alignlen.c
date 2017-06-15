@@ -45,7 +45,7 @@ void align_len_process_record(bam1_t *rec, align_len_metrics_t *alm)
         cigar = bam_get_cigar(rec);
 
         /* Count number of CIGAR S bases in record */
-        for (uint16_t i = 0; i < rec->core.n_cigar; ++i) {
+        for (uint32_t i = 0; i < rec->core.n_cigar; ++i) {
             if (bam_cigar_op(cigar[i]) == BAM_CSOFT_CLIP) {
                 num_s += bam_cigar_oplen(cigar[i]);
             }

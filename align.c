@@ -77,7 +77,7 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
             /* Count M, I, D, S in CIGAR string (processCIGAR) */
 
             /* for each CIGAR operator */
-            for (uint16_t i = 0; i < rec->core.n_cigar; ++i) {
+            for (uint32_t i = 0; i < rec->core.n_cigar; ++i) {
                 op = bam_cigar_op(cigar[i]);
                 oplen = bam_cigar_oplen(cigar[i]);
 
