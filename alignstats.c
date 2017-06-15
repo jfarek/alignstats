@@ -22,8 +22,9 @@
 /**
  * Todo list/Wish list
  *
+ * tests
  * long options, should be easy
- * bed support using htslib regidx
+ * options for different output formats
  * option for multithreading by chunking from read buffer
  * target_cov[] can just be made the highest 2 or so bits of coverage[]
  */

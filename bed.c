@@ -7,7 +7,6 @@
 
 /**
  * File structure for reading files in subset of BED format (first 3 fields)
- * TODO replace with htslib regidx?
  */
 
 /**
@@ -111,48 +110,69 @@ int _get_chrom_idx(char **chrom_names, char *chrom_buffer, int32_t n_targets)
 }
 
 /**
+ * Parse line from fp and set chrom_buffer, start and end
+ * Returns whether parsing was successful
+ */
+bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int *end)
+{
+    bool rv = true;
+    int num_read_chrom;
+    char *c_start, *c_end;
+
+    if (fgets(line_buffer, CHROM_BUFFER_SIZE, fp) == NULL) {
+        rv = false;
+    } else {
+        num_read_chrom = sscanf(line_buffer, CHROM_BUFFER_SIZE_SCAN, chrom_buffer);
+
+        /* Ignore header lines and improperly formatted lines. */
+        if (num_read_chrom < 1 ||
+            *chrom_buffer == '#' ||
+            strncmp(chrom_buffer, "browser", strlen("browser")) == 0 ||
+            strncmp(chrom_buffer, "track", strlen("track")) == 0)
+        {
+            rv = false;
+        } else {
+            c_start = line_buffer + strlen(chrom_buffer);
+            *start = strtol(c_start, &c_end, 10);
+            c_start = c_end;
+            *end = strtol(c_start, &c_end, 10);
+        }
+    }
+
+    return rv;
+}
+
+/**
  * Load targets file. Header lines and improperly formatted lines are ignored.
  * Returns number of targets loaded.
  */
 size_t load_bed(FILE *fp, bed_t *ti, bam_hdr_t *hdr)
 {
+    char *chrom_buffer, *line_buffer;
+    int chrom_idx;
+    size_t target_size, counts[hdr->n_targets];
+    int32_t start, end, chrom_len;
+
     ti->num_chroms = hdr->n_targets;
     ti->chroms = malloc(((size_t)hdr->n_targets * sizeof(bed_chrom_t *)));
     die_on_alloc_fail(ti->chroms);
 
-    char *chrom_buffer, *num_buffer;
-    char *c_start, *c_end;
-    int chrom_idx;
-    size_t counts[hdr->n_targets];
-    int32_t start, end, chrom_len;
-    size_t target_size = hdr->n_targets * sizeof(size_t);
-
+    line_buffer = malloc(CHROM_BUFFER_SIZE * sizeof(char));
+    die_on_alloc_fail(line_buffer);
     chrom_buffer = malloc(CHROM_BUFFER_SIZE * sizeof(char));
     die_on_alloc_fail(chrom_buffer);
-    num_buffer = malloc(CHROM_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(num_buffer);
+
+    target_size = hdr->n_targets * sizeof(size_t);
     memset(counts, 0, target_size);
 
     /* for each line in target file */
     while (!feof(fp)) {
-        /* Ignore header lines and improperly formatted lines. */
-        if (fscanf(fp, CHROM_BUFFER_SIZE_SCAN, chrom_buffer) < 1) {
+        /* count number of targets per chromosome */
+        if (!_parse_bed(fp, line_buffer, chrom_buffer, &start, &end) ||
+            (chrom_idx = _get_chrom_idx(hdr->target_name, chrom_buffer, hdr->n_targets)) < 0)
+        {
             continue;
         }
-        fgets(num_buffer, CHROM_BUFFER_SIZE, fp);
-        c_start = num_buffer;
-        strtol(c_start, &c_end, 10);
-        c_start = c_end;
-        strtol(c_start, &c_end, 10);
-
-        if (*chrom_buffer == '#') {
-            continue;
-        }
-        chrom_idx = _get_chrom_idx(hdr->target_name, chrom_buffer, hdr->n_targets);
-        if (chrom_idx < 0) {
-            continue;
-        }
-
         ++counts[chrom_idx];
     }
 
@@ -166,17 +186,8 @@ size_t load_bed(FILE *fp, bed_t *ti, bam_hdr_t *hdr)
 
     /* for each line in target file */
     while (!feof(fp)) {
-        /* Ignore header lines and improperly formatted lines. */
-        if (fscanf(fp, CHROM_BUFFER_SIZE_SCAN, chrom_buffer) < 1) {
-            continue;
-        }
-        fgets(num_buffer, CHROM_BUFFER_SIZE, fp);
-        c_start = num_buffer;
-        start = strtol(c_start, &c_end, 10);
-        c_start = c_end;
-        end = strtol(c_start, &c_end, 10);
-
-        if (*chrom_buffer == '#' || 
+        /* record targets */
+        if (!_parse_bed(fp, line_buffer, chrom_buffer, &start, &end) ||
             (chrom_idx = _get_chrom_idx(hdr->target_name, chrom_buffer, hdr->n_targets)) < 0)
         {
             continue;
@@ -204,8 +215,8 @@ size_t load_bed(FILE *fp, bed_t *ti, bam_hdr_t *hdr)
         ++counts[chrom_idx];
     }
 
+    free(line_buffer);
     free(chrom_buffer);
-    free(num_buffer);
 
     return ti->num_targets;
 }
