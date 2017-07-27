@@ -118,28 +118,50 @@ void handle_wgs_coverage(const uint32_t *coverage, capture_metrics_t *cm,
         cov = coverage[i];
 
         /* Bases with coverage of at least 1, 10, 20, etc. */
-        if (cov >= 1) {
-            ++cm->b_1_plus_hits;
-            if (cov >= 10) {
-                ++cm->b_10_plus_hits;
-                if (cov >= 20) {
-                    ++cm->b_20_plus_hits;
-                    if (cov >= 30) {
-                        ++cm->b_30_plus_hits;
-                        if (cov >= 40) {
-                            ++cm->b_40_plus_hits;
-                            if (cov >= 50) {
-                                ++cm->b_50_plus_hits;
-                                if (cov >= 100) {
-                                    ++cm->b_100_plus_hits;
-                                    if (cov >= 500) {
-                                        ++cm->b_500_plus_hits;
-                                        if (cov >= 1000) {
-                                            ++cm->b_1000_plus_hits;
-        }   }   }   }   }   }   }   }   }
+        if (cov < 30) {
+            if (cov < 10) {
+                if (cov < 1) {
+                    goto cov0;
+                } else {
+                    goto cov1;
+                }
+            } else {
+                if (cov < 20) {
+                    goto cov10;
+                } else {
+                    goto cov20;
+                }
+            }
+        } else {
+            if (cov < 50) {
+                if (cov < 40) {
+                    goto cov30;
+                } else {
+                    goto cov40;
+                }
+            } else {
+                if (cov < 100) {
+                    goto cov50;
+                } else {
+                    if (cov < 1000) {
+                        goto cov100;
+                    } else {
+                        goto cov1000;
+                    }
+                }
+            }
+        }
 
-        incr_cov_histo(ci, cov);
+cov1000:++cm->b_1000_plus_hits;
+cov100: ++cm->b_100_plus_hits;
+cov50:  ++cm->b_50_plus_hits;
+cov40:  ++cm->b_40_plus_hits;
+cov30:  ++cm->b_30_plus_hits;
+cov20:  ++cm->b_20_plus_hits;
+cov10:  ++cm->b_10_plus_hits;
+cov1:   ++cm->b_1_plus_hits;
         cm->c_total += cov;
+cov0:   incr_cov_histo(ci, cov);
     }
 }
 
@@ -168,29 +190,51 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
             cov = coverage[j];
 
             /* Bases with coverage of at least 1, 10, 20, etc. */
-            if (cov >= 1) {
-                ++cm->b_1_plus_hits;
-                target_hit = true;
-                if (cov >= 10) {
-                    ++cm->b_10_plus_hits;
-                    if (cov >= 20) {
-                        ++cm->b_20_plus_hits;
-                        if (cov >= 30) {
-                            ++cm->b_30_plus_hits;
-                            if (cov >= 40) {
-                                ++cm->b_40_plus_hits;
-                                if (cov >= 50) {
-                                    ++cm->b_50_plus_hits;
-                                    if (cov >= 100) {
-                                        ++cm->b_100_plus_hits;
-                                        if (cov >= 500) {
-                                            ++cm->b_500_plus_hits;
-                                            if (cov >= 1000) {
-                                                ++cm->b_1000_plus_hits;
-            }   }   }   }   }   }   }   }   }
+            if (cov < 30) {
+                if (cov < 10) {
+                    if (cov < 1) {
+                        goto tgtcov0;
+                    } else {
+                        goto tgtcov1;
+                    }
+                } else {
+                    if (cov < 20) {
+                        goto tgtcov10;
+                    } else {
+                        goto tgtcov20;
+                    }
+                }
+            } else {
+                if (cov < 50) {
+                    if (cov < 40) {
+                        goto tgtcov30;
+                    } else {
+                        goto tgtcov40;
+                    }
+                } else {
+                    if (cov < 100) {
+                        goto tgtcov50;
+                    } else {
+                        if (cov < 1000) {
+                            goto tgtcov100;
+                        } else {
+                            goto tgtcov1000;
+                        }
+                    }
+                }
+            }
 
-            incr_cov_histo(ci, cov);
+tgtcov1000: ++cm->b_1000_plus_hits;
+tgtcov100:  ++cm->b_100_plus_hits;
+tgtcov50:   ++cm->b_50_plus_hits;
+tgtcov40:   ++cm->b_40_plus_hits;
+tgtcov30:   ++cm->b_30_plus_hits;
+tgtcov20:   ++cm->b_20_plus_hits;
+tgtcov10:   ++cm->b_10_plus_hits;
+tgtcov1:    ++cm->b_1_plus_hits;
             cm->c_total += cov;
+            target_hit = true;
+tgtcov0:    incr_cov_histo(ci, cov);
         }
 
         if (target_hit) {
@@ -206,18 +250,16 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
             while (j < buffer_end) {
                 if (coverage[j++] > 0) {
                     buffer_hit = true;
+                    ++cm->t_buffers_hit;
                     break;
                 }
             }
 
-            if (buffer_hit) {
-                ++cm->t_buffers_hit;
-            } else {
+            if (!buffer_hit) {
                 /* Right buffer */
                 ++end;
                 j = (end > 0) ? end : 0;
-                buffer_end =
-                    (end + BUFFER < chrom_len) ? end + BUFFER : chrom_len - 1;
+                buffer_end = (end + BUFFER < chrom_len) ? end + BUFFER : chrom_len - 1;
 
                 while (j < buffer_end) {
                     if (coverage[j++] > 0) {
@@ -343,7 +385,7 @@ void set_target_cov(uint8_t *target_cov, capture_metrics_t *cm, bed_t *ti,
                     int32_t chrom_idx, int32_t chrom_len)
 {
     uint8_t *curr_pos, *end_pos;
-    int32_t start, end, start_, end_, target_start;
+    int32_t start, end, start_, end_;
     bed_chrom_t *tic;
 
     if (ti->num_targets > 0) {
@@ -357,37 +399,20 @@ void set_target_cov(uint8_t *target_cov, capture_metrics_t *cm, bed_t *ti,
             start = tic->start_pos[j];
             end = tic->end_pos[j];
 
-            /* Left buffer */
+            /* Buffers (and Target) */
             start_ = (start > BUFFER) ? start - BUFFER : 0;
-            end_ = (start < chrom_len) ? start : chrom_len - 1;
+            end_ = (end + 1 + BUFFER < chrom_len) ? end + 1 + BUFFER : chrom_len;
+            memset(target_cov + start_, TARGET_BUFFER, end_ - start_);
+        }
 
-            for (curr_pos = target_cov + start_, end_pos = target_cov + end_;
-                 curr_pos < end_pos;
-                 ++curr_pos)
-            {
-                if (*curr_pos == TARGET_OUT) {
-                    *curr_pos = TARGET_BUFFER;
-                }
-            }
+        for (size_t j = 0; j < tic->num_targets; ++j) {
+            start = tic->start_pos[j];
+            end = tic->end_pos[j];
 
             /* Target */
-            target_start = (start > 0) ? start : 0;
-            memset(target_cov + target_start, TARGET_IN,
-                   ((end < chrom_len) ? end : chrom_len - 1) - target_start + 1);
-
-            /* Right buffer */
-            ++end;
-            start_ = (end > 0) ? end : 0;
-            end_ = (end + BUFFER < chrom_len) ? end + BUFFER : chrom_len - 1;
-
-            for (curr_pos = target_cov + start_, end_pos = target_cov + end_;
-                 curr_pos < end_pos;
-                 ++curr_pos)
-            {
-                if (*curr_pos == TARGET_OUT) {
-                    *curr_pos = TARGET_BUFFER;
-                }
-            }
+            start_ = (start > 0) ? start : 0;
+            end_ = (end < chrom_len) ? end + 1 : chrom_len;
+            memset(target_cov + start_, TARGET_IN, end_ - start_);
         }
 
         /* Record number of buffer and targeted bases in target_cov */

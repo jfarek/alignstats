@@ -110,14 +110,18 @@ int _get_chrom_idx(char **chrom_names, char *chrom_buffer, int32_t n_targets)
 }
 
 /**
- * Parse line from fp and set chrom_buffer, start and end
- * Returns whether parsing was successful
+ * Parse line from fp and set chrom_buffer, start and end.
+ * Returns whether parsing was successful.
  */
 bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int *end)
 {
     bool rv = true;
     int num_read_chrom;
     char *c_start, *c_end;
+    size_t strlen_browser, strlen_track;
+
+    strlen_browser = strlen("browser");
+    strlen_track = strlen("track");
 
     if (fgets(line_buffer, CHROM_BUFFER_SIZE, fp) == NULL) {
         rv = false;
@@ -127,8 +131,8 @@ bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int
         /* Ignore header lines and improperly formatted lines. */
         if (num_read_chrom < 1 ||
             *chrom_buffer == '#' ||
-            strncmp(chrom_buffer, "browser", strlen("browser")) == 0 ||
-            strncmp(chrom_buffer, "track", strlen("track")) == 0)
+            strncmp(chrom_buffer, "browser", strlen_browser) == 0 ||
+            strncmp(chrom_buffer, "track", strlen_track) == 0)
         {
             rv = false;
         } else {

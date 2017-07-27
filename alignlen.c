@@ -75,7 +75,6 @@ void align_len_finalize(align_len_metrics_t *alm)
 
         /* Mean and mode alignment lengths */
         for (i = 0; i < alm->length_map->num_nodes; ++i) {
-
             if (!tree_map_set_node(&node, alm->length_map, keyset[i])) {
                 goto fail;
             }

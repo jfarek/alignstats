@@ -53,9 +53,11 @@ bool move_to_first_region(args_t *args)
     bool rv = true;
     bed_chrom_t **chroms = args->regions->chroms;
 
+    /* no more regions */
     if (args->regions_curr_chrom_idx >= args->regions->num_chroms) {
         rv = false;
     } else {
+        /* find first chrom */
         while (rv && chroms[args->regions_curr_chrom_idx]->num_targets == 0) {
             if (args->regions_curr_chrom_idx < args->regions->num_chroms) {
                 ++args->regions_curr_chrom_idx;
@@ -204,7 +206,7 @@ uint32_t process_records(args_t *args)
             }
 
             if (args->order_warn && !check_order_tid(args->prev_mapped_chrom_idx, args->curr_chrom_idx)) {
-                log_warning("Record not in sorted order. Results may not be accurate: "
+                log_warning("Record not in coordinate-sorted order. Results may not be accurate: "
                             "tid %d > %d", args->prev_mapped_chrom_idx,
                                            args->curr_chrom_idx);
                 args->order_warn = false;
@@ -212,12 +214,11 @@ uint32_t process_records(args_t *args)
             prev_rec_pos = -2;
 
             /* Don't process CIGAR if RNAME is "*" */
-            args->process_cigar = (args->curr_chrom_name == NULL ||
-                                   *args->curr_chrom_name != '*');
+            args->process_cigar = (args->curr_chrom_name == NULL || *args->curr_chrom_name != '*');
         }
 
         if (args->order_warn && !check_order_pos(prev_rec_pos, rec->core.pos)) {
-            log_warning("Record not in sorted order. Results may not be accurate: "
+            log_warning("Record not in coordinate-sorted order. Results may not be accurate: "
                         "tid %d, pos %d > %d", args->curr_chrom_idx,
                                                prev_rec_pos + 1,
                                                rec->core.pos + 1);
@@ -229,8 +230,7 @@ uint32_t process_records(args_t *args)
         is_read_filtered = (filter_test_qual(rec->core.qual, args->fc->min_qual) ||
                             filter_test_flag(rec->core.flag, args->fc->filter_incl, args->fc->filter_excl));
 
-        if (!is_read_filtered)
-        {
+        if (!is_read_filtered) {
             prev_rec_pos = rec->core.pos;
 
             /* Alignment stats */
@@ -314,8 +314,7 @@ uint32_t process_records(args_t *args)
                 args->new_chrom = false;
             }
 
-            if (!is_read_filtered)
-            {
+            if (!is_read_filtered) {
                 /* Process read for target and coverage info */
                 capture_process_record(rec, args->coverage, args->target_cov,
                                        args->cm_wgs, args->cm, args->curr_chrom_len,
@@ -324,7 +323,7 @@ uint32_t process_records(args_t *args)
         }
 
         if (args->verbose && ++args->num_records_processed % args->interval == 0) {
-            log_info("%lu records processed...", args->num_records_processed);
+            log_info("%lu records processed ...", args->num_records_processed);
         }
     }
 
@@ -486,14 +485,17 @@ void *pt_process_records(void *arg)
 #endif /* USE_PTHREAD */
 
 /**
- * Read bam1_t records into buffers and process.
+ * Read bam1_t records into buffers and then process.
  */
 void read_and_process(args_t *args)
 {
     args->read_buff = args->curr_buff = args->rec_buff_arr[0];
 
+    /* while records are still being loaded to buffers */
     while ((args->read_buff_size = args->read_bam_func(args)) > 0) {
+        /* process ... */
         process_records(args);
+        /* then swap buffers */
         args->curr_buff = args->read_buff =
             (args->read_buff == args->rec_buff_arr[0])
                 ? args->rec_buff_arr[1]

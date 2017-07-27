@@ -54,8 +54,7 @@ void insert_size_process_record(bam1_t *rec, insert_size_metrics_t *ism)
         node = tree_map_get(ism->insert_size_map, key);
 
         /* Increment insert size in map */
-        tree_map_set(ism->insert_size_map, key,
-                     (node == NULL) ? 1 : node->value + 1);
+        tree_map_set(ism->insert_size_map, key, (node == NULL) ? 1 : node->value + 1);
     }
 }
 
@@ -78,8 +77,7 @@ void insert_size_finalize(insert_size_metrics_t *ism)
                 goto fail;
             }
 
-            curr_size = (uint64_t)node->value;
-            if (curr_size > mode_size) {
+            if ((curr_size = (uint64_t)node->value) > mode_size) {
                 mode_size = curr_size;
                 ism->mode = (uint64_t)keyset[i];
             }
