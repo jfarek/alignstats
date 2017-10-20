@@ -448,7 +448,7 @@ void *pt_read_bam(void *arg)
 
         /* sync point 2 */
         pthread_barrier_wait(&args->barrier2);
-    } while (record_idx > 0);
+    } while (args->read_buff_size > 0);
 
     pthread_exit(NULL);
 }
@@ -458,10 +458,9 @@ void *pt_read_bam(void *arg)
  */
 void *pt_process_records(void *arg)
 {
-    bool more_to_process = true;
     args_t *args = (args_t *)arg;
 
-    while (more_to_process) {
+    do {
         process_records(args);
 
         /* sync point 1 */
@@ -474,9 +473,7 @@ void *pt_process_records(void *arg)
 
         /* sync point 2 */
         pthread_barrier_wait(&args->barrier2);
-
-        more_to_process = (args->read_buff_size > 0);
-    }
+    } while (args->read_buff_size > 0);
 
     finalize_results(args);
 

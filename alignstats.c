@@ -4,6 +4,7 @@
 #include "processing.h"
 #include "report.h"
 #include "treemap.h"
+#include "htslib/thread_pool.h"
 #include <ctype.h>
 #include <getopt.h>
 #include <stdlib.h>
@@ -43,6 +44,7 @@ void usage()
     fprintf(stderr, "    -n INT      Maximum number of records to keep in memory.\n");
     fprintf(stderr, "    -p          Use separate threads for reading and processing records\n");
     fprintf(stderr, "                (requires builtin pthread support).\n");
+    fprintf(stderr, "    -P INT      Number of HTSlib decompression threads to spawn.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "File options:\n");
     fprintf(stderr, "    -i INPUT    Read INPUT as the input SAM, BAM, or CRAM file (stdin). Input\n");
@@ -90,7 +92,7 @@ int main(int argc, char **argv)
     char *cov_mask_fn, *reference_fn, *ref_buff, *end;
     char mode[MODE_LEN], fmt[FMT_LEN];
     int c, exit_val;
-    uint8_t min_qual;
+    uint8_t min_qual, num_hts_threads;
     uint16_t filter_incl, filter_excl;
     uint32_t max_chrom_len, min_buffer_reads, max_reads_tmp;
     size_t fn_len, rec_buff_size;
@@ -98,6 +100,7 @@ int main(int argc, char **argv)
     FILE *target_fp, *cov_mask_fp, *regions_fp;
     enum input_format format;
     const uint16_t FLAG_MAX = 4095; /* == (1<<12)-1 */
+    htsThreadPool hts_tpool = {NULL, 0};
 
     args_t *args;
 #ifdef USE_PTHREAD
@@ -120,7 +123,6 @@ int main(int argc, char **argv)
     min_buffer_reads = 200;
     memset(mode, '\0', MODE_LEN);
     memset(fmt, '\0', FMT_LEN);
-    format = INPUT_SAM;
 
     args = calloc(1, sizeof(args_t));
     die_on_alloc_fail(args);
@@ -190,11 +192,12 @@ int main(int argc, char **argv)
     }
 
     min_qual = 0;
+    num_hts_threads = 1;
     filter_incl = 0;
     filter_excl = 0;
 
     /* Read parameters */
-    while ((c = getopt(argc, argv, "ACDF:T:UWf:hi:j:m:n:o:pq:r:t:v")) != -1) {
+    while ((c = getopt(argc, argv, "ACDF:P:T:UWf:hi:j:m:n:o:pq:r:t:v")) != -1) {
         switch (c) {
         case 'A': /* Turn off alignment stats */
             args->do_alignment = false;
@@ -206,11 +209,13 @@ int main(int argc, char **argv)
             args->remove_dups = false;
             break;
         case 'F': /* Filter exclude */
-            filter_excl = (uint16_t)strtol(optarg, &end, 10);
-            if (filter_excl > FLAG_MAX) {
+            if ((filter_excl = (uint16_t)strtol(optarg, &end, 10)) > FLAG_MAX) {
                 log_warning("Invalid flag received from -F option. Setting to 0.");
                 filter_excl = 0;
             }
+            break;
+        case 'P': /* Number of HTSlib decompression threads */
+            num_hts_threads = (uint8_t)strtol(optarg, &end, 10);
             break;
         case 'T': /* Reference filename for cram */
             reference_fn = optarg;
@@ -222,8 +227,7 @@ int main(int argc, char **argv)
             args->do_wgs = false;
             break;
         case 'f': /* Filter include */
-            filter_incl = (uint16_t)strtol(optarg, &end, 10);
-            if (filter_incl > FLAG_MAX) {
+            if ((filter_incl = (uint16_t)strtol(optarg, &end, 10)) > FLAG_MAX) {
                 log_warning("Invalid flag received from -f option. Setting to 0.");
                 filter_incl = 0;
             }
@@ -244,8 +248,7 @@ int main(int argc, char **argv)
             cov_mask_fn = optarg;
             break;
         case 'n': /* Maximum number of reads in memory */
-            max_reads_tmp = (uint32_t)strtol(optarg, &end, 10);
-            if (max_reads_tmp < min_buffer_reads) {
+            if ((max_reads_tmp = (uint32_t)strtol(optarg, &end, 10)) < min_buffer_reads) {
                 log_warning("Given value for -r is too small, using %u", min_buffer_reads);
                 max_reads_tmp = min_buffer_reads;
             }
@@ -306,6 +309,7 @@ int main(int argc, char **argv)
     /* Open files */
 
     /* Format specified with -j option */
+    format = INPUT_SAM;
     if (*fmt != '\0') {
         for (size_t i = 0; fmt[i] != '\0'; ++i) {
             fmt[i] = tolower(fmt[i]);
@@ -386,11 +390,21 @@ int main(int argc, char **argv)
         free(ref_buff);
     }
 
+    /* Input alignment header */
     if ((args->hdr = sam_hdr_read(args->input_sf)) == NULL) {
         log_error("Failed to read header for input file \"%s\".", input_fn);
         perror(NULL);
         exit_val = EXIT_FAILURE;
         goto end;
+    }
+
+    /* HTSlib decompression threads */
+    if (num_hts_threads > 1) {
+        if ((hts_tpool.pool = hts_tpool_init(num_hts_threads)) != NULL) {
+            hts_set_opt(args->input_sf, HTS_OPT_THREAD_POOL, &hts_tpool);
+        } else {
+            log_warning("Failed to initialize HTSlib thread pool, continuing ...");
+        }
     }
 
     /* Alignment index file if processing by region */
@@ -410,7 +424,7 @@ int main(int argc, char **argv)
     /* Target file for capture */
     if (args->do_capture) {
         if (args->verbose) {
-            log_info("Opening target file.");
+            log_info("Opening target file \"%s\"", target_fn);
         }
 
         /* Open target file */
@@ -434,7 +448,7 @@ int main(int argc, char **argv)
         args->output_fp = stdout;
     } else {
         if (args->verbose) {
-            log_info("Opening output file.");
+            log_info("Opening output file \"%s\"", output_fn);
         }
         if ((args->output_fp = fopen(output_fn, "w")) == NULL) {
             log_error("Failed to open output file \"%s\".", output_fn);
@@ -447,7 +461,7 @@ int main(int argc, char **argv)
     /* N bases coverage values mask */
     if (cov_mask_fn != NULL) {
         if (args->verbose) {
-            log_info("%s", "Opening coverage mask file.");
+            log_info("Opening coverage mask file \"%s\"", cov_mask_fn);
         }
         if ((cov_mask_fp = fopen(cov_mask_fn, "r")) == NULL) {
             log_error("Failed to open coverage mask file \"%s\".", cov_mask_fn);
@@ -462,7 +476,7 @@ int main(int argc, char **argv)
     /* Region BED file */
     if (regions_fn != NULL) {
         if (args->verbose) {
-            log_info("Opening regions file.");
+            log_info("Opening regions file \"%s\"", regions_fn);
         }
         if ((regions_fp = fopen(regions_fn, "r")) == NULL) {
             log_error("Failed to open regions file \"%s\".", regions_fn);
@@ -473,19 +487,7 @@ int main(int argc, char **argv)
     }
 
     if (args->verbose) {
-        log_info("Files opened successfully. Files in use:");
-        log_info("Input file: %s", input_fn);
-        if (target_fp != NULL) {
-            log_info("Target file: %s", target_fn);
-        }
-        log_info("Output file: %s",
-                 (args->output_fp == stdout) ? "(stdout)" : output_fn);
-        if (regions_fn != NULL) {
-            log_info("Regions file: %s", regions_fn);
-        }
-        if (cov_mask_fn != NULL) {
-            log_info("Coverage mask file: %s", cov_mask_fn);
-        }
+        log_info("Files opened successfully.");
     }
 
     /* Prepare all the data structures */
@@ -508,7 +510,7 @@ int main(int argc, char **argv)
 
     if (regions_fn != NULL) {
         if (args->verbose) {
-            log_info("Loading regions file...");
+            log_info("Loading regions file ...");
         }
 
         args->regions = bed_init();
@@ -544,7 +546,7 @@ int main(int argc, char **argv)
         args->ti = bed_init();
 
         if (args->verbose) {
-            log_info("Loading targets...");
+            log_info("Loading targets ...");
         }
 
         if (load_bed(target_fp, args->ti, args->hdr) == 0) {
@@ -569,7 +571,7 @@ int main(int argc, char **argv)
         args->cov_mask_ti = bed_init();
 
         if (args->verbose) {
-            log_info("Loading coverage mask targets...");
+            log_info("Loading coverage mask targets ...");
         }
 
         if (load_bed(cov_mask_fp, args->cov_mask_ti, args->hdr) == 0) {
@@ -697,7 +699,7 @@ int main(int argc, char **argv)
 #else
         log_warning("AlignStats not built with pthread, multithreading disabled.");
     }
-#endif
+#endif /* USE_PTHREAD */
         if (args->verbose) {
             log_info("Start processing records.");
         }
@@ -705,7 +707,7 @@ int main(int argc, char **argv)
         read_and_process(args);
 #ifdef USE_PTHREAD
     }
-#endif
+#endif /* USE_PTHREAD */
 
     /* Clean up */
 end:
@@ -755,6 +757,9 @@ end:
     if (args->output_fp != NULL && fclose(args->output_fp) != 0) {
         log_error("Error closing output file \"%s\".", output_fn);
         perror(NULL);
+    }
+    if (hts_tpool.pool != NULL) {
+        hts_tpool_destroy(hts_tpool.pool);
     }
     if (args->verbose && exit_val == EXIT_SUCCESS) {
         log_info("Finished successfully.");
