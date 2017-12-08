@@ -139,7 +139,7 @@ void insert_size_report(report_t *report, insert_size_metrics_t *ism)
     die_on_alloc_fail(value_buffer);
 
     copy_to_buffer(key_buffer, "Insert_Size_Mean", REPORT_BUFFER_SIZE);
-    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%.2f", ism->mean);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", ism->mean);
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_buffer, "Insert_Size_Median", REPORT_BUFFER_SIZE);
@@ -150,10 +150,8 @@ void insert_size_report(report_t *report, insert_size_metrics_t *ism)
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", ism->mode);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    /* work in progress
-    */
     copy_to_buffer(key_buffer, "Insert_Size_Standard_Deviation", REPORT_BUFFER_SIZE);
-    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%.2f", ism->std_dev);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", ism->std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
 
     free(key_buffer);

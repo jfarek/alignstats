@@ -6,10 +6,11 @@
  */
 int print_pct(char *buffer, size_t num, uint64_t numerator, uint64_t denominator)
 {
-    return snprintf(buffer, num, "%.2f",
+    return snprintf(buffer, num, "%f",
                     (denominator == 0)
                         ? 0.0
-                        : 100.0 * (double)numerator / (double)denominator);
+                        : (double)numerator / (double)denominator);
+                        /*: 100.0 * (double)numerator / (double)denominator);*/
 }
 
 /**

@@ -179,9 +179,7 @@ int main(int argc, char **argv)
     args->cov_mask_ti = NULL;
     args->coverage = NULL;
     args->target_cov = NULL;
-    args->a_report = NULL;
-    args->wgs_report = NULL;
-    args->cap_report = NULL;
+    args->report = NULL;
 
     /* No parameters */
     if (argc == 1) {
@@ -283,11 +281,6 @@ int main(int argc, char **argv)
 
     if (args->verbose) {
         log_info("Running AlignStats v" ALIGNSTATS_VERSION);
-        log_info("Command:");
-        for (int i = 0; i < argc; ++i) {
-            log_info_r((i == 0 ? "%s" : " %s"), argv[i]);
-        }
-        log_info_r("\n");
     }
 
     /* Check parameters */
@@ -597,16 +590,7 @@ int main(int argc, char **argv)
     args->read_bam_func = (regions_fn == NULL) ? read_bam1 : read_bam_itr;
 
     /* Reports */
-    args->fc_report = report_init();
-    if (args->do_alignment) {
-        args->a_report = report_init();
-    }
-    if (args->do_wgs) {
-        args->wgs_report = report_init();
-    }
-    if (args->do_capture) {
-        args->cap_report = report_init();
-    }
+    args->report = report_init();
 
     /* Set sizes of coverage and target_cov to size of largest chromosome */
     max_chrom_len = 0;
@@ -723,10 +707,7 @@ end:
         }
     }
 
-    report_destroy(args->fc_report);
-    report_destroy(args->a_report);
-    report_destroy(args->wgs_report);
-    report_destroy(args->cap_report);
+    report_destroy(args->report);
     align_metrics_destroy(args->am_all);
     align_metrics_destroy(args->am_read1);
     align_metrics_destroy(args->am_read2);

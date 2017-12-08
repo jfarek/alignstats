@@ -120,9 +120,19 @@ void report_print(FILE *stream, report_t *report)
 {
     report_element_t *curr_elem = report->head_elem;
 
-    /* for each element print key, value */
-    while (curr_elem != NULL) {
-        fprintf(stream, REPORT_FORMAT, curr_elem->key, curr_elem->value);
-        curr_elem = curr_elem->next;
+    if (curr_elem != NULL) {
+        fputc('{', stream);
+        fputc('\n', stream);
+        /* for each element print key, value */
+        while (curr_elem != NULL) {
+            fprintf(stream, REPORT_FORMAT, curr_elem->key, curr_elem->value);
+            if (curr_elem != report->tail_elem) {
+                fputc(',', stream);
+            }
+            fputc('\n', stream);
+            curr_elem = curr_elem->next;
+        }
+        fputc('}', stream);
+        fputc('\n', stream);
     }
 }

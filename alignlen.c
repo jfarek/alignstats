@@ -139,7 +139,7 @@ void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt
     copy_size = REPORT_BUFFER_SIZE - prefix_len;
 
     copy_to_buffer(key_start, "Aligned_Read_Length_Mean", copy_size);
-    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%.2f", alm->mean);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", alm->mean);
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "Aligned_Read_Length_Median", copy_size);

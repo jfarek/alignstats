@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #define REPORT_BUFFER_SIZE 4096
-#define REPORT_FORMAT "%s: %s\n"
+#define REPORT_FORMAT "    \"%s\": %s"
 
 /* Report element structure */
 struct report_element {

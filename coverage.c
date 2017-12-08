@@ -664,7 +664,7 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "Coverage_Mean", copy_size);
-    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%.2f",
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f",
              (denominator != 0) ? (double)cm->c_total / (double)denominator
                                 : 0.0);
     report_add_key_value(report, key_buffer, value_buffer);
@@ -674,7 +674,7 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "Coverage_Standard_Deviation", copy_size);
-    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%.2f", cm->c_std_dev);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", cm->c_std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "Expected_Aligned_Reads", copy_size);

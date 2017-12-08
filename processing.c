@@ -378,43 +378,31 @@ void finalize_results(args_t *args)
     }
 
     /* Report filtered/unfiltered read counts */
-    fprintf(args->output_fp, "## AlignStats Report ##\n");
-    filter_counter_report(args->fc_report, args->fc);
-    report_print(args->output_fp, args->fc_report);
+    filter_counter_report(args->report, args->fc);
 
     /* Write alignment stats report */
     if (args->do_alignment) {
-        align_report(args->a_report, args->am_all, RT_ALL);
-        align_report(args->a_report, args->am_read1, RT_READ1);
-        align_report(args->a_report, args->am_read2, RT_READ2);
-        align_len_report(args->a_report, args->alm_all, RT_ALL);
-        align_len_report(args->a_report, args->alm_read1, RT_READ1);
-        align_len_report(args->a_report, args->alm_read2, RT_READ2);
-        pair_stats_report(args->a_report, args->psm);
-        insert_size_report(args->a_report, args->ism);
-
-        fprintf(args->output_fp, "## Alignment Statistics ##\n");
-        report_print(args->output_fp, args->a_report);
-    }
-
-    /* Write whole genome and/or coverage stats reports */
-    if (args->do_capture || args->do_wgs) {
-        fprintf(args->output_fp, "## Coverage Statistics ##\n");
+        align_report(args->report, args->am_all, RT_ALL);
+        align_report(args->report, args->am_read1, RT_READ1);
+        align_report(args->report, args->am_read2, RT_READ2);
+        align_len_report(args->report, args->alm_all, RT_ALL);
+        align_len_report(args->report, args->alm_read1, RT_READ1);
+        align_len_report(args->report, args->alm_read2, RT_READ2);
+        pair_stats_report(args->report, args->psm);
+        insert_size_report(args->report, args->ism);
     }
 
     /* Write whole genome stats report */
     if (args->do_wgs) {
-        capture_report(args->wgs_report, args->cm_wgs, NULL);
-        fprintf(args->output_fp, "### Whole Genome Metrics ###\n");
-        report_print(args->output_fp, args->wgs_report);
+        capture_report(args->report, args->cm_wgs, NULL);
     }
 
     /* Write capture stats report */
     if (args->do_capture) {
-        capture_report(args->cap_report, args->cm, args->ti);
-        fprintf(args->output_fp, "### Capture Metrics ###\n");
-        report_print(args->output_fp, args->cap_report);
+        capture_report(args->report, args->cm, args->ti);
     }
+
+    report_print(args->output_fp, args->report);
 }
 
 #ifdef USE_PTHREAD
