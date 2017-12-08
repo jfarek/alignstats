@@ -85,6 +85,6 @@
         }                                                                      \
     } while (0)
 
-#define log(...) fprintf(LOGGING_DEST, __VA_ARGS__)
+#define log_r(...) fprintf(LOGGING_DEST, __VA_ARGS__)
 
 #endif /* _LOGGING_H */

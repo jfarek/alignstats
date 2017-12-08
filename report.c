@@ -98,7 +98,6 @@ void report_destroy(report_t *report)
  */
 void report_add_element(report_t *report, report_element_t *element)
 {
-
     if (report->tail_elem == NULL) { /* Empty report */
         report->tail_elem = report->head_elem = element;
     } else {                         /* Non-empty report */

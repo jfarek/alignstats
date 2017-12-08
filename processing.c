@@ -50,26 +50,26 @@ void set_iter(args_t *args)
  */
 bool move_to_first_region(args_t *args)
 {
-    bool rv = true;
+    bool ret = true;
     bed_chrom_t **chroms = args->regions->chroms;
 
     /* no more regions */
     if (args->regions_curr_chrom_idx >= args->regions->num_chroms) {
-        rv = false;
+        ret = false;
     } else {
         /* find first chrom */
-        while (rv && chroms[args->regions_curr_chrom_idx]->num_targets == 0) {
+        while (ret && chroms[args->regions_curr_chrom_idx]->num_targets == 0) {
             if (args->regions_curr_chrom_idx < args->regions->num_chroms) {
                 ++args->regions_curr_chrom_idx;
                 args->regions_curr_target_idx = 0;
             } else {
-                rv = false;
+                ret = false;
             }
         }
         set_iter(args);
     }
 
-    return rv;
+    return ret;
 }
 
 /**
@@ -79,12 +79,12 @@ bool move_to_first_region(args_t *args)
  */
 bool move_to_next_region(args_t *args)
 {
-    bool rv = true;
+    bool ret = true;
     bed_chrom_t **chroms = args->regions->chroms;
 
     /* no more regions */
     if (args->regions_curr_chrom_idx >= args->regions->num_chroms) {
-        rv = false;
+        ret = false;
     } else {
         ++args->regions_curr_target_idx;
 
@@ -95,17 +95,17 @@ bool move_to_next_region(args_t *args)
                 if (args->regions_curr_chrom_idx < args->regions->num_chroms) {
                     args->regions_curr_target_idx = 0;
                 } else {
-                    rv = false;
+                    ret = false;
                 }
-            } while (rv && chroms[args->regions_curr_chrom_idx]->num_targets == 0);
+            } while (ret && chroms[args->regions_curr_chrom_idx]->num_targets == 0);
         }
 
-        if (rv) {
+        if (ret) {
             set_iter(args);
         }
     }
 
-    return rv;
+    return ret;
 }
 
 /**
@@ -277,12 +277,6 @@ uint32_t process_records(args_t *args)
                             args->coverage, args->cm, args->ci, args->ti,
                             args->prev_chrom_idx, args->prev_chrom_name,
                             args->prev_chrom_len);
-                        /*
-                         * Note: target and buffer regions in coverage are
-                         * wiped out by handle_miss_reads(). Only call
-                         * handle_miss_reads() once coverage no longer
-                         * needs to be processed.
-                         */
                         handle_miss_reads(args->coverage, args->cm, args->ti,
                                           args->prev_chrom_idx,
                                           args->prev_chrom_len);

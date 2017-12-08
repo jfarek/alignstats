@@ -63,8 +63,10 @@ struct capture_metrics {
     uint64_t t_non_target_good_hits;
 
     /* Coverage info */
-    uint64_t c_total;  /* Sum of target coverage values (for median, average) */
-    uint64_t c_median; /* Median target coverage */
+    uint64_t c_total;  /* Sum of coverage values (for median, average) */
+    uint64_t c_median; /* Median coverage */
+    double c_std_dev;  /* Coverage sample standard deviation */
+    uint64_t c_sum_sq; /* Sum of squared coverage values (for c_std_dev) */
 };
 typedef struct capture_metrics capture_metrics_t;
 

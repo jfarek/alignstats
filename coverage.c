@@ -2,6 +2,7 @@
 #include "err.h"
 #include "logging.h"
 #include "print.h"
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,15 +59,26 @@ capture_metrics_t *capture_metrics_init()
  */
 void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci, bed_t *ti)
 {
-    uint64_t sum = 0, mid = (ti == NULL ? cm->b_total : cm->b_targeted) / 2;
+    uint64_t k = 0, sum = 0;
+    uint64_t mid = (ti == NULL ? cm->b_total : cm->b_targeted) / 2;
+    bool median_set = false;
 
     /* Set median coverage */
     for (size_t i = 0; i < ci->cov_histo_len; ++i) {
-        if ((sum += ci->cov_histo[i]) >= mid) {
-            cm->c_median = i;
-            break;
+        if (ci->cov_histo[i] > 0) {
+            k += ci->cov_histo[i];
+            sum += i * ci->cov_histo[i];
+            if (!median_set && sum >= mid) {
+                cm->c_median = i;
+                median_set = true;
+            }
         }
     }
+
+    cm->c_std_dev = k > 1
+        ? sqrt(((double)cm->c_sum_sq - (double)(sum * sum) / (double)k) /
+               (double)(k - 1))
+        : 0.0;
 
     /* Masked bases */
     cm->b_total -= cm->b_masked;
@@ -90,15 +102,17 @@ void incr_cov_histo(coverage_info_t *ci, uint32_t cov)
     uint64_t *tmp_cov_histo;
 
     if (cov + 1 > ci->cov_histo_len) {
-        /* Buffer a small amount (256) to reduce # of reallocs for slowly increasing coverage */
+        /* Buffer an additional 256 to reduce # of reallocs for slowly increasing coverage */
         ci->cov_histo_len = (size_t)(cov + 1 + 256);
         tmp_cov_histo = realloc(ci->cov_histo, ci->cov_histo_len * sizeof(uint64_t));
 
         if (tmp_cov_histo != NULL) {
             ci->cov_histo = tmp_cov_histo;
         } else {
+            // kill program
             free(ci->cov_histo);
             die_on_alloc_fail(tmp_cov_histo);
+            return;
         }
     }
 
@@ -160,7 +174,8 @@ cov30:  ++cm->b_30_plus_hits;
 cov20:  ++cm->b_20_plus_hits;
 cov10:  ++cm->b_10_plus_hits;
 cov1:   ++cm->b_1_plus_hits;
-        cm->c_total += cov;
+        cm->c_total += (uint64_t)cov;
+        cm->c_sum_sq += (uint64_t)cov * (uint64_t)cov;
 cov0:   incr_cov_histo(ci, cov);
     }
 }
@@ -174,7 +189,7 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
                             const char *chrom, int32_t chrom_len)
 {
     /* Target coverage statistics */
-    bool target_hit, buffer_hit; /*, space_fasta = false;*/
+    bool target_hit, buffer_hit;
     uint32_t cov;
     int32_t start, end, j, buffer_end;
     bed_chrom_t *tic = ti->chroms[chrom_idx];
@@ -232,7 +247,8 @@ tgtcov30:   ++cm->b_30_plus_hits;
 tgtcov20:   ++cm->b_20_plus_hits;
 tgtcov10:   ++cm->b_10_plus_hits;
 tgtcov1:    ++cm->b_1_plus_hits;
-            cm->c_total += cov;
+            cm->c_total += (uint64_t)cov;
+            cm->c_sum_sq += (uint64_t)cov * (uint64_t)cov;
             target_hit = true;
 tgtcov0:    incr_cov_histo(ci, cov);
         }
@@ -289,10 +305,9 @@ void clear_coverage(uint32_t *coverage, int32_t start, int32_t end, int32_t chro
 }
 
 /**
- * (findWhereReadsHit)
  * Record contiguous regions of >= 20X coverage outside of target and buffer
- * regions. This function is destructive to coverage, only perform once all
- * records for a chromosome have been processed.
+ * regions.
+ * TODO make this non-destructive
  */
 void handle_miss_reads(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
                        int32_t chrom_idx, int32_t chrom_len)
@@ -648,14 +663,18 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_paired_w_mate);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Average_Coverage", copy_size);
+    copy_to_buffer(key_start, "Coverage_Mean", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%.2f",
              (denominator != 0) ? (double)cm->c_total / (double)denominator
                                 : 0.0);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Median_Coverage", copy_size);
+    copy_to_buffer(key_start, "Coverage_Median", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->c_median);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "Coverage_Standard_Deviation", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%.2f", cm->c_std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "Expected_Aligned_Reads", copy_size);

@@ -98,15 +98,15 @@ void bed_destroy(bed_t *ti)
  */
 int _get_chrom_idx(char **chrom_names, char *chrom_buffer, int32_t n_targets)
 {
-    int rv = -9;
+    int ret = -9;
 
-    for (int32_t i = 0; i < n_targets && rv == -9; ++i) {
+    for (int32_t i = 0; i < n_targets && ret == -9; ++i) {
         if (strcmp(chrom_buffer, chrom_names[i]) == 0) {
-            rv = i;
+            ret = i;
         }
     }
 
-    return rv;
+    return ret;
 }
 
 /**
@@ -115,7 +115,7 @@ int _get_chrom_idx(char **chrom_names, char *chrom_buffer, int32_t n_targets)
  */
 bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int *end)
 {
-    bool rv = true;
+    bool ret = true;
     int num_read_chrom;
     char *c_start, *c_end;
     size_t strlen_browser, strlen_track;
@@ -124,7 +124,7 @@ bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int
     strlen_track = strlen("track");
 
     if (fgets(line_buffer, CHROM_BUFFER_SIZE, fp) == NULL) {
-        rv = false;
+        ret = false;
     } else {
         num_read_chrom = sscanf(line_buffer, CHROM_BUFFER_SIZE_SCAN, chrom_buffer);
 
@@ -134,7 +134,7 @@ bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int
             strncmp(chrom_buffer, "browser", strlen_browser) == 0 ||
             strncmp(chrom_buffer, "track", strlen_track) == 0)
         {
-            rv = false;
+            ret = false;
         } else {
             c_start = line_buffer + strlen(chrom_buffer);
             *start = strtol(c_start, &c_end, 10);
@@ -143,7 +143,7 @@ bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int
         }
     }
 
-    return rv;
+    return ret;
 }
 
 /**

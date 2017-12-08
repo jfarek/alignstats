@@ -247,7 +247,7 @@ void tree_map_remove(tree_map_t *tree, tree_node_key_t key)
  */
 int _tree_map_keyset(tree_node_t *node, tree_node_key_t *keyset, int i)
 {
-    int rv = i;
+    int ret = i;
 
     if (node != NULL) {
         /* Collect keys from left subtree */
@@ -257,10 +257,10 @@ int _tree_map_keyset(tree_node_t *node, tree_node_key_t *keyset, int i)
         keyset[i++] = node->key;
 
         /* Collect keys from right subtree and return */
-        rv = _tree_map_keyset(node->right, keyset, i);
+        ret = _tree_map_keyset(node->right, keyset, i);
     }
 
-    return rv;
+    return ret;
 }
 
 /**
@@ -282,17 +282,17 @@ tree_node_key_t *tree_map_keyset(tree_map_t *tree)
  */
 bool tree_map_set_node(tree_node_t **node, tree_map_t *tree, tree_node_key_t key)
 {
-    bool rv = true;
+    bool ret = true;
     tree_node_t *tmp_node = tree_map_get(tree, key);
 
     if (tmp_node != NULL) {
         *node = tmp_node;
     } else {
         log_error("Failed to retrieve node from tree map. This should not happen.");
-        rv = false;
+        ret = false;
     }
 
-    return rv;
+    return ret;
 }
 
 /**
@@ -301,15 +301,15 @@ bool tree_map_set_node(tree_node_t **node, tree_map_t *tree, tree_node_key_t key
  */
 bool tree_map_set_keyset(tree_node_key_t **keyset, tree_map_t *tree)
 {
-    bool rv = true;
+    bool ret = true;
     tree_node_key_t *tmp_keyset = tree_map_keyset(tree);
 
     if (tmp_keyset != NULL) {
         *keyset = tmp_keyset;
     } else {
         log_error("Failed to retrieve keyset for tree map. This should not happen.");
-        rv = false;
+        ret = false;
     }
 
-    return rv;
+    return ret;
 }

@@ -131,8 +131,8 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
              * if num_mismatches was calculated from an MD tag, subtract dels
              * otherwise num_mismatches becomes num_x
              */
-            /* TODO this should be activated, need to test discrepancies and
-             * tag presence/absence
+            /* TODO use NM tag, not MD tag. Need to test discrepancies and tag
+             * presence/absence
             if ((nm_tag = bam_aux_get(rec, "NM")) != NULL) {
                 num_mismatches = bam_aux2i(nm_tag);
                 num_mismatches -= num_d;
