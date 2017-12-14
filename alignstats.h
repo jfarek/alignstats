@@ -103,12 +103,6 @@ struct args {
 
     /* Reports */
     report_t *report;
-    /*
-    report_t *fc_report;
-    report_t *a_report;
-    report_t *wgs_report;
-    report_t *cap_report;
-    */
 };
 typedef struct args args_t;
 

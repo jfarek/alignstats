@@ -59,7 +59,6 @@ void insert_size_process_record(bam1_t *rec, insert_size_metrics_t *ism)
         /* Increment insert size in map */
         tree_map_set(ism->insert_size_map, isize, (node == NULL) ? 1 : node->value + 1);
 
-        /* Cast both first to guard against overflow in int32_t */
         ism->sum_sq += (uint64_t)isize * (uint64_t)isize;
     }
 }
@@ -116,7 +115,6 @@ void insert_size_finalize(insert_size_metrics_t *ism)
                 ? sqrt(((double)ism->sum_sq - (double)(sum * sum) / (double)k) /
                        (double)(k - 1))
                 : 0.0;
-
         } else {
             ism->mean = 0.0;
             ism->median = 0;

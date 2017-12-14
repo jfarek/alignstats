@@ -1,6 +1,7 @@
 #include "alignlen.h"
 #include "err.h"
 #include "print.h"
+#include <math.h>
 #include <string.h>
 
 /* Alignment length metrics structure */
@@ -36,7 +37,7 @@ void align_len_metrics_destroy(align_len_metrics_t *alm)
  */
 void align_len_process_record(bam1_t *rec, align_len_metrics_t *alm)
 {
-    int32_t key, num_s;
+    int32_t aligned_len, num_s;
     uint32_t *cigar;
     tree_node_t *node;
 
@@ -52,10 +53,12 @@ void align_len_process_record(bam1_t *rec, align_len_metrics_t *alm)
         }
 
         /* Increment alignment length count */
-        key = rec->core.l_qseq - num_s;
-        node = tree_map_get(alm->length_map, key);
+        aligned_len = rec->core.l_qseq - num_s;
+        node = tree_map_get(alm->length_map, aligned_len);
 
-        tree_map_set(alm->length_map, key, (node == NULL) ? 1 : node->value + 1);
+        tree_map_set(alm->length_map, aligned_len, (node == NULL) ? 1 : node->value + 1);
+
+        alm->sum_sq += (uint64_t)aligned_len * (uint64_t)aligned_len;
     }
 }
 
@@ -65,16 +68,16 @@ void align_len_process_record(bam1_t *rec, align_len_metrics_t *alm)
  */
 void align_len_finalize(align_len_metrics_t *alm)
 {
-    size_t i;
-    uint64_t num_lengths, sum_lengths, mode_length, curr_length, median_idx;
+    bool median_set;
+    uint64_t k, sum, mode_length, curr_length, median_idx;
     tree_node_key_t *keyset;
     tree_node_t *node;
 
     if (tree_map_set_keyset(&keyset, alm->length_map)) {
-        num_lengths = sum_lengths = mode_length = 0;
+        k = sum = mode_length = 0;
 
         /* Mean and mode alignment lengths */
-        for (i = 0; i < alm->length_map->num_nodes; ++i) {
+        for (size_t i = 0; i < alm->length_map->num_nodes; ++i) {
             if (!tree_map_set_node(&node, alm->length_map, keyset[i])) {
                 goto fail;
             }
@@ -84,30 +87,36 @@ void align_len_finalize(align_len_metrics_t *alm)
                 alm->mode = (uint64_t)keyset[i];
             }
 
-            num_lengths += curr_length;
-            sum_lengths += (uint64_t)keyset[i] * curr_length;
+            k += curr_length;
+            sum += (uint64_t)keyset[i] * curr_length;
         }
 
-        if (num_lengths != 0) {
-            alm->mean = (double)sum_lengths / (double)num_lengths;
+        if (k != 0) {
+            alm->mean = (double)sum / (double)k;
 
             /* Median alignment length */
-            median_idx = num_lengths / 2;
-            num_lengths = 0;
-
-            for (i = 0; i < alm->length_map->num_nodes; ++i) {
+            median_idx = k / 2;
+            k = 0;
+            for (size_t i = 0; i < alm->length_map->num_nodes; ++i) {
                 if (!tree_map_set_node(&node, alm->length_map, keyset[i])) {
                     goto fail;
                 }
 
-                if ((num_lengths += (uint64_t)node->value) >= median_idx) {
+                k += (uint64_t)node->value;
+                if (!median_set && k >= median_idx) {
                     alm->median = (uint64_t)keyset[i];
-                    break;
+                    median_set = true;
                 }
             }
+
+            alm->std_dev = k > 1
+                ? sqrt(((double)alm->sum_sq - (double)(sum * sum) / (double)k) /
+                       (double)(k - 1))
+                : 0.0;
         } else {
             alm->mean = 0.0;
             alm->median = 0;
+            alm->std_dev = 0.0;
         }
 
 fail:
@@ -148,6 +157,10 @@ void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt
 
     copy_to_buffer(key_start, "Aligned_Read_Length_Mode", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", alm->mode);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "Aligned_Read_Length_Standard_Deviation", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", alm->std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
 
     free(key_buffer);

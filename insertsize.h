@@ -12,9 +12,7 @@ struct insert_size_metrics {
     double std_dev;
     uint64_t median;
     uint64_t mode;
-    uint64_t sum;
     uint64_t sum_sq;
-    uint64_t num;
     uint16_t filter_incl;
     uint16_t filter_excl;
     tree_map_t *insert_size_map;

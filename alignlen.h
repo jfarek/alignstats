@@ -10,8 +10,10 @@
 /* Alignment length metrics structure */
 struct align_len_metrics {
     double mean;            /* Mean alignment length */
+    double std_dev;
     uint64_t median;        /* Median alignment length */
     uint64_t mode;          /* Mode alignment length */
+    uint64_t sum_sq;
     tree_map_t *length_map; /* Treemap of alignment lengths */
 };
 typedef struct align_len_metrics align_len_metrics_t;
