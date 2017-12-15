@@ -17,8 +17,8 @@
 #define LL_INFO  3
 #define LL_DEBUG 4
 
-#define LOGGING_NAME  "AlignStats"
-#define LOGGING_DEST  stderr
+#define LOGGING_NAME "AlignStats"
+#define LOGGING_DEST stderr
 #define LOGGING_LEVEL LL_INFO
 /*
 #define LOGGING_LEVEL LL_DEBUG

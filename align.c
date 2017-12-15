@@ -38,7 +38,7 @@ void align_metrics_destroy(align_metrics_t *am)
 void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
 {
     char op;
-    uint8_t /* *nm_tag,*/ *md_tag, *qual;
+    uint8_t *nm_tag, /* *md_tag,*/ *qual;
     int32_t pos, end_pos;
     uint32_t oplen, *cigar;
     uint64_t num_m, num_i, num_d, num_s, num_eq, num_x;
@@ -106,7 +106,6 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
                     break;
                 }
 
-                /* Q20 aligned bases */
                 switch (op) {
                 case BAM_CMATCH:
                 case BAM_CEQUAL:
@@ -131,15 +130,13 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
              * if num_mismatches was calculated from an MD tag, subtract dels
              * otherwise num_mismatches becomes num_x
              */
-            /* TODO use NM tag, not MD tag. Need to test discrepancies and tag
-             * presence/absence
             if ((nm_tag = bam_aux_get(rec, "NM")) != NULL) {
                 num_mismatches = bam_aux2i(nm_tag);
                 num_mismatches -= num_d;
                 num_matches = num_m - num_mismatches;
-            } else
-            */
-            if ((md_tag = bam_aux_get(rec, "MD")) != NULL) {
+            }
+            /*
+            else if ((md_tag = bam_aux_get(rec, "MD")) != NULL) {
                 num_mismatches = 0;
                 for (char *md_str = bam_aux2Z(md_tag); *md_str != '\0'; ++md_str) {
                     if (isalpha(*md_str)) {
@@ -148,7 +145,9 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
                 }
                 num_mismatches -= num_d;
                 num_matches = num_m - num_mismatches;
-            } else {
+            }
+            */
+            else {
                 num_mismatches = num_x;
                 num_matches = (num_m > num_eq) ? num_m - num_mismatches : num_eq;
             }
@@ -194,148 +193,148 @@ void align_report(report_t *report, align_metrics_t *am, read_type_t rt)
      * Add key prefix for read1 and read2
      * All reads: prefix = ""
      */
-    const char *prefix = (rt == RT_READ1) ? "R1_" : rt == RT_READ2 ? "R2_" : "";
+    const char *prefix = (rt == RT_READ1) ? "R1" : rt == RT_READ2 ? "R2" : "";
     size_t prefix_len = strlen(prefix);
     size_t copy_size = REPORT_BUFFER_SIZE - prefix_len;
     char *key_start = key_buffer + prefix_len;
 
     copy_to_buffer(key_buffer, prefix, REPORT_BUFFER_SIZE);
 
-    copy_to_buffer(key_start, "Yield_Reads", copy_size);
+    copy_to_buffer(key_start, "YieldReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Yield_Bases", copy_size);
+    copy_to_buffer(key_start, "YieldBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Unmapped_Reads", copy_size);
+    copy_to_buffer(key_start, "UnmappedReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->r_unmapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Unmapped_Reads_Pct", copy_size);
+    copy_to_buffer(key_start, "UnmappedReadsPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->r_unmapped, am->r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Unmapped_Bases", copy_size);
+    copy_to_buffer(key_start, "UnmappedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_unmapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Unmapped_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "UnmappedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_unmapped, am->b_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
     if (rt == RT_ALL) {
-        copy_to_buffer(key_start, "Duplicate_Reads", copy_size);
+        copy_to_buffer(key_start, "DuplicateReads", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->r_dup);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Duplicate_Reads_Pct", copy_size);
+        copy_to_buffer(key_start, "DuplicateReadsPct", copy_size);
         print_pct(value_buffer, REPORT_BUFFER_SIZE, am->r_dup, am->r_aligned);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Duplicate_Bases", copy_size);
+        copy_to_buffer(key_start, "DuplicateBases", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_dup);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Duplicate_Bases_Pct", copy_size);
+        copy_to_buffer(key_start, "DuplicateBasesPct", copy_size);
         print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_dup, am->b_aligned);
         report_add_key_value(report, key_buffer, value_buffer);
     }
 
-    copy_to_buffer(key_start, "Mapped_Reads", copy_size);
+    copy_to_buffer(key_start, "MappedReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->r_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Mapped_Reads_Pct", copy_size);
+    copy_to_buffer(key_start, "MappedReadsPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->r_mapped, am->r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Mapped_Bases", copy_size);
+    copy_to_buffer(key_start, "MappedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Mapped_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "MappedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_mapped, am->b_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Aligned_Bases", copy_size);
+    copy_to_buffer(key_start, "AlignedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Aligned_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "AlignedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_aligned, am->b_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Matched_Bases", copy_size);
+    copy_to_buffer(key_start, "MatchedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_matched);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Matched_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "MatchedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_matched, am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Mismatched_Bases", copy_size);
+    copy_to_buffer(key_start, "MismatchedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_mismatched);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Mismatched_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "MismatchedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_mismatched, am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Inserted_Bases", copy_size);
+    copy_to_buffer(key_start, "InsertedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_inserted);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Inserted_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "InsertedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_inserted, am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Deleted_Bases", copy_size);
+    copy_to_buffer(key_start, "DeletedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_deleted);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Deleted_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "DeletedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_deleted, am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "SoftClipped_Reads", copy_size);
+    copy_to_buffer(key_start, "SoftClippedReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->r_soft_clipped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "SoftClipped_Reads_Pct", copy_size);
+    copy_to_buffer(key_start, "SoftClippedReadsPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->r_soft_clipped, am->r_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "SoftClipped_Bases", copy_size);
+    copy_to_buffer(key_start, "SoftClippedBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_soft_clipped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "SoftClipped_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "SoftClippedBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_soft_clipped, am->b_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Perfect_Reads", copy_size);
+    copy_to_buffer(key_start, "PerfectReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->r_exact_match);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Perfect_Reads_Pct", copy_size);
+    copy_to_buffer(key_start, "PerfectReadsPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->r_exact_match, am->r_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Perfect_Bases", copy_size);
+    copy_to_buffer(key_start, "PerfectBases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_exact_match);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Perfect_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "PerfectBasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_exact_match, am->b_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Q20_Bases", copy_size);
+    copy_to_buffer(key_start, "Q20Bases", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_q20);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Q20_Bases_Pct", copy_size);
+    copy_to_buffer(key_start, "Q20BasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_q20, am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 

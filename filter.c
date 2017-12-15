@@ -61,23 +61,23 @@ void filter_counter_report(report_t *report, filter_counter_t *fc)
 
     uint64_t r_total = fc->r_filtered + fc->r_unfiltered;
 
-    copy_to_buffer(key_buffer, "Total_Reads", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "TotalReads", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Unfiltered_Reads", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "UnfilteredReads", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", fc->r_unfiltered);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Unfiltered_Reads_Pct", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "UnfilteredReadsPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, fc->r_unfiltered, r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Filtered_Reads", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "FilteredReads", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", fc->r_filtered);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Filtered_Reads_Pct", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "FilteredReadsPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, fc->r_filtered, r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 

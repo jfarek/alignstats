@@ -332,20 +332,20 @@ int main(int argc, char **argv)
     case INPUT_BAM:
         strncpy(mode, "rb", 3);
         if (args->verbose) {
-            log_info("Opening input file as BAM file.");
+            log_info("Opening input file \"%s\" as BAM file.", input_fn);
         }
         break;
     case INPUT_CRAM:
         strncpy(mode, "rc", 3);
         if (args->verbose) {
-            log_info("Opening input file as CRAM file.");
+            log_info("Opening input file \"%s\" as CRAM file.", input_fn);
         }
         break;
     case INPUT_SAM:
     default:
         strncpy(mode, "r", 2);
         if (args->verbose) {
-            log_info("Opening input file as SAM file.");
+            log_info("Opening input file \"%s\" as SAM file.", input_fn);
         }
         break;
     }
@@ -417,7 +417,7 @@ int main(int argc, char **argv)
     /* Target file for capture */
     if (args->do_capture) {
         if (args->verbose) {
-            log_info("Opening target file \"%s\"", target_fn);
+            log_info("Opening target file \"%s\".", target_fn);
         }
 
         /* Open target file */
@@ -441,7 +441,7 @@ int main(int argc, char **argv)
         args->output_fp = stdout;
     } else {
         if (args->verbose) {
-            log_info("Opening output file \"%s\"", output_fn);
+            log_info("Opening output file \"%s\".", output_fn);
         }
         if ((args->output_fp = fopen(output_fn, "w")) == NULL) {
             log_error("Failed to open output file \"%s\".", output_fn);
@@ -454,7 +454,7 @@ int main(int argc, char **argv)
     /* N bases coverage values mask */
     if (cov_mask_fn != NULL) {
         if (args->verbose) {
-            log_info("Opening coverage mask file \"%s\"", cov_mask_fn);
+            log_info("Opening coverage mask file \"%s\".", cov_mask_fn);
         }
         if ((cov_mask_fp = fopen(cov_mask_fn, "r")) == NULL) {
             log_error("Failed to open coverage mask file \"%s\".", cov_mask_fn);
@@ -469,7 +469,7 @@ int main(int argc, char **argv)
     /* Region BED file */
     if (regions_fn != NULL) {
         if (args->verbose) {
-            log_info("Opening regions file \"%s\"", regions_fn);
+            log_info("Opening regions file \"%s\".", regions_fn);
         }
         if ((regions_fp = fopen(regions_fn, "r")) == NULL) {
             log_error("Failed to open regions file \"%s\".", regions_fn);

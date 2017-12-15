@@ -141,25 +141,25 @@ void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt
      * Add key prefix for read1 and read2
      * All reads: prefix = ""
      */
-    const char *prefix = (rt == RT_READ1) ? "R1_" : rt == RT_READ2 ? "R2_" : "";
+    const char *prefix = (rt == RT_READ1) ? "R1" : rt == RT_READ2 ? "R2" : "";
     prefix_len = strlen(prefix);
     copy_to_buffer(key_buffer, prefix, REPORT_BUFFER_SIZE);
     key_start = key_buffer + strlen(prefix);
     copy_size = REPORT_BUFFER_SIZE - prefix_len;
 
-    copy_to_buffer(key_start, "Aligned_Read_Length_Mean", copy_size);
+    copy_to_buffer(key_start, "AlignedReadLengthMean", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", alm->mean);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Aligned_Read_Length_Median", copy_size);
+    copy_to_buffer(key_start, "AlignedReadLengthMedian", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", alm->median);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Aligned_Read_Length_Mode", copy_size);
+    copy_to_buffer(key_start, "AlignedReadLengthMode", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", alm->mode);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Aligned_Read_Length_Standard_Deviation", copy_size);
+    copy_to_buffer(key_start, "AlignedReadLengthStandardDeviation", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", alm->std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
 

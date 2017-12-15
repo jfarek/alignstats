@@ -181,7 +181,6 @@ cov0:   incr_cov_histo(ci, cov);
 }
 
 /**
- * (getTargetsAndWriteCoverage)
  * Record capture coverage metrics for chromosome cname.
  */
 void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
@@ -307,7 +306,6 @@ void clear_coverage(uint32_t *coverage, int32_t start, int32_t end, int32_t chro
 /**
  * Record contiguous regions of >= 20X coverage outside of target and buffer
  * regions.
- * TODO make this non-destructive
  */
 void handle_miss_reads(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
                        int32_t chrom_idx, int32_t chrom_len)
@@ -315,19 +313,35 @@ void handle_miss_reads(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
     if (ti->num_targets > 0) {
         bed_chrom_t *tic = ti->chroms[chrom_idx];
 
-        /* for each target set coverage[start-buffer:end+buffer] values to 0 */
-        for (size_t i = 0; i < tic->num_targets; ++i) {
-            clear_coverage(coverage, tic->start_pos[i] - MISS_BUFFER,
-                           tic->end_pos[i] + MISS_BUFFER, chrom_len);
-        }
+        int32_t start = 0, end;
 
-        /* for each base in coverage with targets cleared */
-        for (int32_t j = 0; j < chrom_len; ++j) {
+        for (size_t i = 0; i < tic->num_targets; ++i) {
+            end = tic->start_pos[i] - 1 - MISS_BUFFER;
+            if (end >= start) {
+                if (start < 0) {
+                    start = 0;
+                }
+                if (end >= chrom_len) {
+                    end = chrom_len - 1;
+                }
+
+                for (int32_t j = start; j <= end; ++j) {
+                    if (coverage[j] >= 20) {
+                        ++cm->t_non_target_good_hits;
+                        while (j <= end && coverage[j] > 0) {
+                            ++j;
+                        }
+                    }
+                }
+            }
+            start = tic->end_pos[i] + 1 + MISS_BUFFER;
+        }
+        end = chrom_len;
+
+        for (int32_t j = start; j <= end; ++j) {
             if (coverage[j] >= 20) {
                 ++cm->t_non_target_good_hits;
-
-                /* Scoot j past this contiguous region of coverage */
-                while (j < chrom_len && coverage[j] > 0) {
+                while (j <= end && coverage[j] > 0) {
                     ++j;
                 }
             }
@@ -625,7 +639,7 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
     char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
     die_on_alloc_fail(value_buffer);
 
-    const char *prefix = (ti == NULL) ? "Wgs_" : "Cap_";
+    const char *prefix = (ti == NULL) ? "Wgs" : "Cap";
     size_t prefix_len = strlen(prefix);
     size_t copy_size = REPORT_BUFFER_SIZE - prefix_len;
     char *key_start = key_buffer + prefix_len;
@@ -635,175 +649,175 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
 
     copy_to_buffer(key_buffer, prefix, REPORT_BUFFER_SIZE);
 
-    copy_to_buffer(key_start, "Total_Reads", copy_size);
+    copy_to_buffer(key_start, "TotalReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Cov_Duplicate_Reads", copy_size);
+    copy_to_buffer(key_start, "CovDuplicateReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_dup);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Cov_Duplicate_Reads_Pct", copy_size);
+    copy_to_buffer(key_start, "CovDuplicateReadsPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->r_dup, cm->r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Aligned_Reads", copy_size);
+    copy_to_buffer(key_start, "AlignedReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Aligned_Reads_Pct", copy_size);
+    copy_to_buffer(key_start, "AlignedReadsPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->r_aligned, cm->r_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Reads_Paired", copy_size);
+    copy_to_buffer(key_start, "ReadsPaired", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_paired);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Reads_Paired_With_Mates", copy_size);
+    copy_to_buffer(key_start, "ReadsPairedWithMates", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_paired_w_mate);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Mean", copy_size);
+    copy_to_buffer(key_start, "CoverageMean", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f",
              (denominator != 0) ? (double)cm->c_total / (double)denominator
                                 : 0.0);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Median", copy_size);
+    copy_to_buffer(key_start, "CoverageMedian", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->c_median);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Standard_Deviation", copy_size);
+    copy_to_buffer(key_start, "CoverageStandardDeviation", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", cm->c_std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Expected_Aligned_Reads", copy_size);
+    copy_to_buffer(key_start, "ExpectedAlignedReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Calculated_Aligned_Reads", copy_size);
+    copy_to_buffer(key_start, "CalculatedAlignedReads", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_in_target + cm->r_in_buffer + cm->r_out_target);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_1", copy_size);
+    copy_to_buffer(key_start, "CoverageBases1", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_1_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_1_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases1Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_1_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_10", copy_size);
+    copy_to_buffer(key_start, "CoverageBases10", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_10_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_10_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases10Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_10_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_20", copy_size);
+    copy_to_buffer(key_start, "CoverageBases20", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_20_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_20_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases20Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_20_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_30", copy_size);
+    copy_to_buffer(key_start, "CoverageBases30", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_30_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_30_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases30Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_30_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_40", copy_size);
+    copy_to_buffer(key_start, "CoverageBases40", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_40_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_40_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases40Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_40_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_50", copy_size);
+    copy_to_buffer(key_start, "CoverageBases50", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_50_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_50_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases50Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_50_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_100", copy_size);
+    copy_to_buffer(key_start, "CoverageBases100", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_100_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_100_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases100Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_100_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_1000", copy_size);
+    copy_to_buffer(key_start, "CoverageBases1000", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_1000_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_start, "Coverage_Bases_1000_Pct", copy_size);
+    copy_to_buffer(key_start, "CoverageBases1000Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_1000_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
     /* ti != NULL? capture stats: wgs */
     if (ti != NULL) {
-        copy_to_buffer(key_start, "Buffer_Aligned_Reads", copy_size);
+        copy_to_buffer(key_start, "BufferAlignedReads", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_in_buffer);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Buffer_Aligned_Reads_Pct", copy_size);
+        copy_to_buffer(key_start, "BufferAlignedReadsPct", copy_size);
         print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->r_in_buffer, cm->r_aligned);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Target_Aligned_Reads", copy_size);
+        copy_to_buffer(key_start, "TargetAlignedReads", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_in_target);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Target_Aligned_Reads_Pct", copy_size);
+        copy_to_buffer(key_start, "TargetAlignedReadsPct", copy_size);
         print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->r_in_target, cm->r_aligned);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Targets_Hit", copy_size);
+        copy_to_buffer(key_start, "TargetsHit", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->t_hit);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Targets_Hit_Pct", copy_size);
+        copy_to_buffer(key_start, "TargetsHitPct", copy_size);
         print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->t_hit, cm->t_total);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Target_Buffers_Hit", copy_size);
+        copy_to_buffer(key_start, "TargetBuffersHit", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->t_buffers_hit);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Target_Buffers_Hit_Pct", copy_size);
+        copy_to_buffer(key_start, "TargetBuffersHitPct", copy_size);
         print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->t_buffers_hit, cm->t_total);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Total_Targets", copy_size);
+        copy_to_buffer(key_start, "TotalTargets", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->t_total);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "High_Coverage_Non_Target_Hits", copy_size);
+        copy_to_buffer(key_start, "HighCoverageNonTargetHits", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->t_non_target_good_hits);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Bases_On_Target", copy_size);
+        copy_to_buffer(key_start, "BasesOnTarget", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_targeted);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Bases_On_Buffer", copy_size);
+        copy_to_buffer(key_start, "BasesOnBuffer", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_buffer);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Reads_On_Target_Or_Buffer", copy_size);
+        copy_to_buffer(key_start, "ReadsOnTargetOrBuffer", copy_size);
         snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->r_in_target + cm->r_in_buffer);
         report_add_key_value(report, key_buffer, value_buffer);
 
-        copy_to_buffer(key_start, "Reads_On_Target_Or_Buffer_Pct", copy_size);
+        copy_to_buffer(key_start, "ReadsOnTargetOrBufferPct", copy_size);
         print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->r_in_target + cm->r_in_buffer, cm->r_aligned);
         report_add_key_value(report, key_buffer, value_buffer);
     }

@@ -82,43 +82,43 @@ void pair_stats_report(report_t *report, pair_stats_metrics_t *psm)
     char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
     die_on_alloc_fail(value_buffer);
 
-    copy_to_buffer(key_buffer, "Total_Pairs", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "TotalPairs", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", psm->pairs_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Total_Same_Chr_Pairs", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "TotalSameChrPairs", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", psm->pairs_mapped_same_chr);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Total_Same_Chr_Pairs_Pct", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "TotalSameChrPairsPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->pairs_mapped_same_chr, psm->pairs_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Unpaired_Reads", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "UnpairedReads", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", psm->pairs_unmapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Unpaired_Reads_Pct", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "UnpairedReadsPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->pairs_unmapped, psm->pairs_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "R1_Unpaired_Reads", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "R1UnpairedReads", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", psm->read1_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "R1_Unpaired_Reads_Pct", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "R1UnpairedReadsPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->read1_mapped, psm->pairs_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "R2_Unpaired_Reads", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "R2UnpairedReads", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", psm->read2_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "R2_Unpaired_Reads_Pct", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "R2UnpairedReadsPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->read2_mapped, psm->pairs_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "Chimeric_Rate", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "ChimericRate", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->cr_improper_pair, psm->cr_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 
