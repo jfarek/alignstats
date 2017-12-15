@@ -4,3 +4,12 @@ ChangeLog
 AlignStats v0.1 (13 Jun 2017)
 
 First public version.
+
+AlignStats v0.2 (16 Dec 2017)
+
+- Output report is now in JSON format.
+- Option `-P` for setting the number of HTSlib decompression threads to spawn.
+- Metric key names have changed, (see docs/kvs_pairs.md).
+- Metrics have been added for coverage and insert size standard deviation.
+- NM tag is now used to count mismatches instead of MD tag.
+- Fix how bases on target or buffer are counted.
