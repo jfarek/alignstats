@@ -28,7 +28,7 @@ AlignStats multithreading support is enabled by running ``configure`` as:
 ## Usage
 
     alignstats [-i INPUT] [-j FORMAT] [-o OUTPUT]
-               [-h] [-v] [-n NUMREADS] [-p]
+               [-h] [-v] [-n NUMREADS] [-p] [-P INT]
                [-r REGIONS] [-t TARGET] [-m COVMASK] [-T REFFASTA]
                [-q INT] [-f INT] [-F INT]
                [-D] [-U] [-A] [-C] [-W]
@@ -39,6 +39,7 @@ AlignStats multithreading support is enabled by running ``configure`` as:
         -n INT      Maximum number of records to keep in memory.
         -p          Use separate threads for reading and processing records
                     (requires builtin pthread support).
+        -P INT      Number of HTSlib decompression threads to spawn.
 
     File options:
         -i INPUT    Read INPUT as the input SAM, BAM, or CRAM file (stdin). Input

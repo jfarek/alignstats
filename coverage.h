@@ -10,7 +10,13 @@
 #define BUFFER 100
 #define MISS_BUFFER 500
 
-enum target_state { TARGET_OUT = 0, TARGET_BUFFER, TARGET_IN };
+/* highest 2 bit in uint32_t */
+#define TARGET_SHIFT (30)
+#define TARGET_MASK (0x03 << TARGET_SHIFT)
+#define get_coverage(cov) ((cov) & ~TARGET_MASK)
+#define get_target(cov) (((cov) & TARGET_MASK) >> TARGET_SHIFT)
+
+enum target_state { TARGET_OUT = 0, TARGET_BUFFER = 1, TARGET_IN = 3 };
 typedef enum target_state target_state_t;
 
 /* Coverage info structure */
@@ -86,13 +92,13 @@ void handle_miss_reads(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
                        int32_t chrom_idx, int32_t chrom_len);
 void handle_coverage_mask(uint32_t *coverage, bed_t *cov_mask_ti,
                           int32_t chrom_idx, int32_t chrom_len);
-void handle_coverage_mask_target(uint8_t *target_cov, capture_metrics_t *cm,
+void handle_coverage_mask_target(uint32_t *coverage, capture_metrics_t *cm,
                                  bed_t *cov_mask_ti, int32_t chrom_idx,
                                  int32_t chrom_len);
-void set_target_cov(uint8_t *target_cov, capture_metrics_t *cm, bed_t *ti,
+void set_target_cov(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
                     int32_t chrom_idx, int32_t chrom_len);
 void capture_process_record(bam1_t *rec, uint32_t *coverage,
-                            const uint8_t *target_cov,
+                            /*const uint8_t *target_cov,*/
                             capture_metrics_t *cm_wgs,
                             capture_metrics_t *cm_cap, int32_t chrom_len,
                             bool remove_dups);

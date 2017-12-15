@@ -129,7 +129,7 @@ void handle_wgs_coverage(const uint32_t *coverage, capture_metrics_t *cm,
 
     /* for each base position in chromosome */
     for (int32_t i = 0; i < chrom_len; ++i) {
-        cov = coverage[i];
+        cov = get_coverage(coverage[i]);
 
         /* Bases with coverage of at least 1, 10, 20, etc. */
         if (cov < 30) {
@@ -189,8 +189,8 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
 {
     /* Target coverage statistics */
     bool target_hit, buffer_hit;
-    uint32_t cov;
     int32_t start, end, j, buffer_end;
+    uint32_t cov;
     bed_chrom_t *tic = ti->chroms[chrom_idx];
 
     /* for each target */
@@ -201,7 +201,7 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
 
         /* for each base position */
         for (int32_t j = start; j <= end; ++j) {
-            cov = coverage[j];
+            cov = get_coverage(coverage[j]);
 
             /* Bases with coverage of at least 1, 10, 20, etc. */
             if (cov < 30) {
@@ -263,11 +263,13 @@ tgtcov0:    incr_cov_histo(ci, cov);
             buffer_end = (start < chrom_len) ? start : chrom_len - 1;
 
             while (j < buffer_end) {
-                if (coverage[j++] > 0) {
+                cov = get_coverage(coverage[j]);
+                if (cov > 0) {
                     buffer_hit = true;
                     ++cm->t_buffers_hit;
                     break;
                 }
+                ++j;
             }
 
             if (!buffer_hit) {
@@ -277,10 +279,12 @@ tgtcov0:    incr_cov_histo(ci, cov);
                 buffer_end = (end + BUFFER < chrom_len) ? end + BUFFER : chrom_len - 1;
 
                 while (j < buffer_end) {
-                    if (coverage[j++] > 0) {
+                    cov = get_coverage(coverage[j]);
+                    if (cov > 0) {
                         ++cm->t_buffers_hit;
                         break;
                     }
+                    ++j;
                 }
             }
         }
@@ -369,12 +373,13 @@ void handle_coverage_mask(uint32_t *coverage, bed_t *cov_mask_ti,
 /**
  * Erase target regions overlapping masked regions
  */
-void handle_coverage_mask_target(uint8_t *target_cov, capture_metrics_t *cm,
+/*void handle_coverage_mask_target(uint8_t *target_cov, capture_metrics_t *cm,*/
+void handle_coverage_mask_target(uint32_t *coverage, capture_metrics_t *cm,
                                  bed_t *cov_mask_ti, int32_t chrom_idx,
                                  int32_t chrom_len)
 {
-    uint8_t *curr_pos, *end_pos;
     int32_t start, end;
+    uint32_t *curr_pos, *end_pos;
     bed_chrom_t *tic;
 
     if (cov_mask_ti->num_targets > 0) {
@@ -385,11 +390,11 @@ void handle_coverage_mask_target(uint8_t *target_cov, capture_metrics_t *cm,
             start = tic->start_pos[i];
             end = tic->end_pos[i];
 
-            for (curr_pos = target_cov + start, end_pos = target_cov + end;
+            for (curr_pos = coverage + start, end_pos = coverage + end;
                  curr_pos <= end_pos;
                  ++curr_pos)
             {
-                switch (*curr_pos) {
+                switch (get_target(*curr_pos)) {
                 case TARGET_IN:
                     --cm->b_targeted;
                     break;
@@ -400,9 +405,6 @@ void handle_coverage_mask_target(uint8_t *target_cov, capture_metrics_t *cm,
                     break;
                 }
             }
-
-            /* Set masked region to TARGET_OUT */
-            memset(target_cov + start, TARGET_OUT, (end - start + 1) * sizeof(uint8_t));
         }
     }
 }
@@ -410,18 +412,15 @@ void handle_coverage_mask_target(uint8_t *target_cov, capture_metrics_t *cm,
 /**
  * Set target positions in target_cov.
  */
-void set_target_cov(uint8_t *target_cov, capture_metrics_t *cm, bed_t *ti,
+void set_target_cov(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
                     int32_t chrom_idx, int32_t chrom_len)
 {
-    uint8_t *curr_pos, *end_pos;
+    uint32_t *curr_pos, *end_pos;
     int32_t start, end, start_, end_;
     bed_chrom_t *tic;
 
     if (ti->num_targets > 0) {
         tic = ti->chroms[chrom_idx];
-
-        /* Clear target_cov */
-        memset(target_cov, TARGET_OUT, chrom_len * sizeof(uint8_t));
 
         /* for each target */
         for (size_t j = 0; j < tic->num_targets; ++j) {
@@ -431,7 +430,9 @@ void set_target_cov(uint8_t *target_cov, capture_metrics_t *cm, bed_t *ti,
             /* Buffers (and Target) */
             start_ = (start > BUFFER) ? start - BUFFER : 0;
             end_ = (end + 1 + BUFFER < chrom_len) ? end + 1 + BUFFER : chrom_len;
-            memset(target_cov + start_, TARGET_BUFFER, end_ - start_);
+            for (size_t pos = start_; pos <= end_; ++pos) {
+                coverage[pos] |= TARGET_BUFFER << TARGET_SHIFT;
+            }
         }
 
         for (size_t j = 0; j < tic->num_targets; ++j) {
@@ -441,15 +442,17 @@ void set_target_cov(uint8_t *target_cov, capture_metrics_t *cm, bed_t *ti,
             /* Target */
             start_ = (start > 0) ? start : 0;
             end_ = (end < chrom_len) ? end + 1 : chrom_len;
-            memset(target_cov + start_, TARGET_IN, end_ - start_);
+            for (size_t pos = start_; pos <= end_; ++pos) {
+                coverage[pos] |= TARGET_IN << TARGET_SHIFT;
+            }
         }
 
         /* Record number of buffer and targeted bases in target_cov */
-        for (curr_pos = target_cov, end_pos = target_cov + chrom_len;
+        for (curr_pos = coverage, end_pos = coverage + chrom_len;
              curr_pos < end_pos;
              ++curr_pos)
         {
-            switch (*curr_pos) {
+            switch (get_target(*curr_pos)) {
             case TARGET_IN:
                 ++cm->b_targeted;
                 break;
@@ -511,7 +514,6 @@ void _capture_process_record2(bam1_t *rec, capture_metrics_t *cm,
  * cm_cap: Capture metrics for capture statistics
  */
 void capture_process_record(bam1_t *rec, uint32_t *coverage,
-                            const uint8_t *target_cov,
                             capture_metrics_t *cm_wgs,
                             capture_metrics_t *cm_cap, int32_t chrom_len,
                             bool remove_dups)
@@ -519,9 +521,9 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
     bool in_target, in_buffer;
     uint8_t *qual, *bqual;
     int32_t pos, start, start_pos, end_pos, ref_pos;
-    uint32_t oplen, *cigar;
+    uint32_t target, oplen, *cigar;
     const uint16_t FILTER = BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL;
-    const uint32_t COV_MAX = UINT32_MAX - 1;
+    const uint32_t COV_MAX = (UINT32_MAX - 1) >> 2;
 
 
     if (cm_wgs != NULL) {
@@ -587,7 +589,7 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
             /* Record coverage */
             qual = bqual + ref_pos;
             while (pos <= end_pos) {
-                if (coverage[pos] < COV_MAX) {
+                if (get_coverage(coverage[pos]) < COV_MAX) {
                     ++coverage[pos];
                 } else {
                     /* Y'know just in case */
@@ -599,11 +601,12 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
             }
             /* pos == end_pos */
 
-            if (target_cov != NULL) {
+            if (coverage != NULL) {
                 while (--pos >= start_pos) {
-                    if (target_cov[pos] == TARGET_BUFFER) {
+                    target = get_target(coverage[pos]);
+                    if (target == TARGET_BUFFER) {
                         in_buffer = true;
-                    } else if (target_cov[pos] == TARGET_IN) {
+                    } else if (target == TARGET_IN) {
                         in_target = true;
                         break;
                     }

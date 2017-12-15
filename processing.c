@@ -333,7 +333,7 @@ uint32_t process_records(args_t *args)
                     if (args->do_capture) {
                         args->cm->b_total += args->curr_chrom_len;
                         set_target_cov(
-                            args->target_cov,
+                            args->coverage,
                             args->cm,
                             args->ti,
                             args->curr_chrom_idx,
@@ -341,7 +341,7 @@ uint32_t process_records(args_t *args)
 
                         if (args->do_cov_mask) {
                             handle_coverage_mask_target(
-                                args->target_cov,
+                                args->coverage,
                                 args->cm,
                                 args->cov_mask_ti,
                                 args->curr_chrom_idx,
@@ -357,7 +357,6 @@ uint32_t process_records(args_t *args)
                 capture_process_record(
                     rec,
                     args->coverage,
-                    args->target_cov,
                     args->cm_wgs,
                     args->cm,
                     args->curr_chrom_len,

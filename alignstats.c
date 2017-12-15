@@ -26,14 +26,13 @@
  * tests
  * long options, should be easy
  * options for different output formats
- * option for multithreading by chunking from read buffer
- * target_cov[] can just be made the highest 2 or so bits of coverage[]
+ * figure out how multiple read threads would work with coverage
  */
 
 void usage()
 {
     fprintf(stderr, "Usage: alignstats [-i INPUT] [-j FORMAT] [-o OUTPUT]\n");
-    fprintf(stderr, "                  [-h] [-v] [-n NUMREADS] [-p]\n");
+    fprintf(stderr, "                  [-h] [-v] [-n NUMREADS] [-p] [-P INT]\n");
     fprintf(stderr, "                  [-r REGIONS] [-t TARGET] [-m COVMASK] [-T REFFASTA]\n");
     fprintf(stderr, "                  [-q INT] [-f INT] [-F INT]\n");
     fprintf(stderr, "                  [-D] [-U] [-A] [-C] [-W]\n");
@@ -178,7 +177,6 @@ int main(int argc, char **argv)
     args->ti = NULL;
     args->cov_mask_ti = NULL;
     args->coverage = NULL;
-    args->target_cov = NULL;
     args->report = NULL;
 
     /* No parameters */
@@ -592,7 +590,7 @@ int main(int argc, char **argv)
     /* Reports */
     args->report = report_init();
 
-    /* Set sizes of coverage and target_cov to size of largest chromosome */
+    /* Set size of coverage to size of largest chromosome */
     max_chrom_len = 0;
 
     for (int32_t i = 0; i < args->hdr->n_targets; ++i) {
@@ -611,12 +609,6 @@ int main(int argc, char **argv)
     if (args->do_wgs || args->do_capture) {
         args->coverage = calloc(max_chrom_len, sizeof(uint32_t));
         die_on_alloc_fail(args->coverage);
-    }
-
-    /* target_cov[] remains NULL otherwise */
-    if (args->do_capture) {
-        args->target_cov = calloc(max_chrom_len, sizeof(uint8_t));
-        die_on_alloc_fail(args->target_cov);
     }
 
     for (uint32_t i = 0; i < RECORD_BUFFER_SECTIONS; ++i) {
@@ -727,7 +719,6 @@ end:
     bed_destroy(args->ti);
     bed_destroy(args->cov_mask_ti);
     free(args->coverage);
-    free(args->target_cov);
 
     if (regions_fn != NULL) {
         bed_destroy(args->regions);
