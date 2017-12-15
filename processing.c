@@ -530,15 +530,15 @@ void *pt_process_records(void *arg)
 void read_and_process(args_t *args)
 {
     size_t section_idx = 0;
-    args->read_buff = args->curr_buff = args->rec_buff_arr[0];
+    args->read_buff = args->curr_buff = args->rec_buff_arr[section_idx];
 
     /* while read records */
-    while (args->read_bam_func(args) > 0) {
+    while ((args->read_buff_size[section_idx] = args->read_bam_func(args)) > 0) {
         /* process ... */
         process_records(args);
         /* then advance to next section in ring buffer */
         section_idx = (section_idx + 1) % RECORD_BUFFER_SECTIONS;
-        args->curr_buff = args->read_buff = args->rec_buff_arr[section_idx];
+        args->read_buff = args->curr_buff = args->rec_buff_arr[section_idx];
         args->read_section_idx = args->process_section_idx = section_idx;
     }
 

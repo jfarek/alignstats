@@ -5,7 +5,7 @@ AlignStats v0.1 (13 Jun 2017)
 
 First public version.
 
-AlignStats v0.2 (16 Dec 2017)
+AlignStats v0.2 (15 Dec 2017)
 
 - Output report is now in JSON format.
 - Option `-P` for setting the number of HTSlib decompression threads to spawn.

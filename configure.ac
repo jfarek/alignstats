@@ -58,6 +58,13 @@ dnl         [],
 dnl         [AC_MSG_ERROR([Failed to find zlib library])])],
 dnl     [AC_MSG_ERROR([Failed to find zlib headers])])
 
+dnl Check math
+AC_CHECK_HEADER([math.h],
+    [AC_SEARCH_LIBS([sqrt], [m],
+        [],
+        [AC_MSG_ERROR([Failed to find math library])])],
+    [AC_MSG_ERROR([Failed to find math headers])])
+
 dnl Check htslib
 AC_CHECK_HEADER([htslib/hts.h],
     [AC_SEARCH_LIBS([hts_open], [hts],
