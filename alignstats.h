@@ -22,22 +22,26 @@
 
 #ifdef USE_PTHREAD
 #include <pthread.h>
+#include <semaphore.h>
 #endif
 
 #define ALIGNSTATS_VERSION "0.1"
-#define RECORD_BUFFER_SIZE 10000
+#define RECORD_BUFFER_SIZE 0x4000
+#define RECORD_BUFFER_SECTIONS 0x10
 
 /* TODO split or make hierarchical */
 struct args {
     /* Pthread stuff */
 #ifdef USE_PTHREAD
-    pthread_barrier_t barrier1, barrier2;
+    sem_t read_sem, process_sem;
 #endif
-    bam1_t **rec_buff_arr[2];
+    bam1_t **rec_buff_arr[RECORD_BUFFER_SECTIONS];
     bam1_t **read_buff;
     bam1_t **curr_buff;
-    uint32_t read_buff_size;
+    uint32_t read_buff_size[RECORD_BUFFER_SECTIONS];
     uint32_t reads_per_buffer;
+    size_t read_section_idx;
+    size_t process_section_idx;
 
     /* Options */
     bool verbose;

@@ -13,7 +13,7 @@ Sequencing Center (BCM-HGSC). Descriptions of reported metrics can be found in
 
 AlignStats requires a recent version of HTSlib (versions 1.3 and higher are
 known to work, version 1.4 or higher is suggested). The ``-p`` option for
-multithreading requires libpthread support with the pthread_barrier extension.
+multithreading requires libpthread support.
 
 To build AlignStats, run:
 

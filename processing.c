@@ -14,6 +14,7 @@
 
 #ifdef USE_PTHREAD
 #include <pthread.h>
+#include <semaphore.h>
 #endif
 
 /**
@@ -35,12 +36,15 @@ void set_iter(args_t *args)
     }
 
     /* set new iter */
-    args->iter = sam_itr_queryi(args->index, args->regions_curr_chrom_idx,
-                                chrom->start_pos[args->regions_curr_target_idx],
-                                chrom->end_pos[args->regions_curr_target_idx]);
+    args->iter = sam_itr_queryi(
+        args->index,
+        args->regions_curr_chrom_idx,
+        chrom->start_pos[args->regions_curr_target_idx],
+        chrom->end_pos[args->regions_curr_target_idx]);
 
     if (args->iter == NULL) {
-        log_warning("Unable to set iterator in region %zu", args->regions_curr_chrom_idx);
+        log_warning("Unable to set iterator in region %zu",
+            args->regions_curr_chrom_idx);
     }
 }
 
@@ -89,7 +93,8 @@ bool move_to_next_region(args_t *args)
         ++args->regions_curr_target_idx;
 
         /* find next chrom */
-        if (args->regions_curr_target_idx >= chroms[args->regions_curr_chrom_idx]->num_targets) {
+        if (args->regions_curr_target_idx >= chroms[args->regions_curr_chrom_idx]->num_targets)
+        {
             do {
                 ++args->regions_curr_chrom_idx;
                 if (args->regions_curr_chrom_idx < args->regions->num_chroms) {
@@ -97,7 +102,8 @@ bool move_to_next_region(args_t *args)
                 } else {
                     ret = false;
                 }
-            } while (ret && chroms[args->regions_curr_chrom_idx]->num_targets == 0);
+            } while (ret &&
+                chroms[args->regions_curr_chrom_idx]->num_targets == 0);
         }
 
         if (ret) {
@@ -137,7 +143,8 @@ uint32_t read_bam_itr(args_t *args)
     uint32_t record_idx = 0;
 
     while (record_idx < args->reads_per_buffer) {
-        if (sam_itr_next(args->input_sf, args->iter, args->read_buff[record_idx]) < 0) {
+        if (sam_itr_next(args->input_sf, args->iter, args->read_buff[record_idx]) < 0)
+        {
             if (!move_to_next_region(args)) {
                 /* process '*' chrom reads */
                 if (args->process_unmapped && !args->process_unmapped_done) {
@@ -184,7 +191,7 @@ uint32_t process_records(args_t *args)
     bam1_t *rec;
 
     /* for each read in read buffer reads */
-    while (record_idx < args->read_buff_size) {
+    while (record_idx < args->read_buff_size[args->process_section_idx]) {
         rec = args->curr_buff[record_idx++];
 
         /* if new chromosome */
@@ -205,30 +212,46 @@ uint32_t process_records(args_t *args)
                 args->curr_chrom_len = 0;
             }
 
-            if (args->order_warn && !check_order_tid(args->prev_mapped_chrom_idx, args->curr_chrom_idx)) {
-                log_warning("Record not in coordinate-sorted order. Results may not be accurate: "
-                            "tid %d > %d", args->prev_mapped_chrom_idx,
-                                           args->curr_chrom_idx);
+            if (args->order_warn &&
+                !check_order_tid(
+                    args->prev_mapped_chrom_idx, args->curr_chrom_idx))
+            {
+                log_warning(
+                    "Record not in coordinate-sorted order. "
+                    "Results may not be accurate: "
+                    "tid %d > %d",
+                    args->prev_mapped_chrom_idx,
+                    args->curr_chrom_idx);
                 args->order_warn = false;
             }
             prev_rec_pos = -2;
 
             /* Don't process CIGAR if RNAME is "*" */
-            args->process_cigar = (args->curr_chrom_name == NULL || *args->curr_chrom_name != '*');
+            args->process_cigar = (
+                args->curr_chrom_name == NULL ||
+                *args->curr_chrom_name != '*');
         }
 
-        if (args->order_warn && !check_order_pos(prev_rec_pos, rec->core.pos)) {
-            log_warning("Record not in coordinate-sorted order. Results may not be accurate: "
-                        "tid %d, pos %d > %d", args->curr_chrom_idx,
-                                               prev_rec_pos + 1,
-                                               rec->core.pos + 1);
+        if (args->order_warn &&
+            !check_order_pos(prev_rec_pos, rec->core.pos))
+        {
+            log_warning(
+                "Record not in coordinate-sorted order. "
+                "Results may not be accurate: "
+                "tid %d, pos %d > %d",
+                args->curr_chrom_idx,
+                prev_rec_pos + 1,
+                rec->core.pos + 1);
             args->order_warn = false;
         }
 
         /* Preliminary filtering */
         filter_counter_process_record(rec, args->fc);
-        is_read_filtered = (filter_test_qual(rec->core.qual, args->fc->min_qual) ||
-                            filter_test_flag(rec->core.flag, args->fc->filter_incl, args->fc->filter_excl));
+        is_read_filtered = (
+            filter_test_qual(rec->core.qual, args->fc->min_qual) ||
+            filter_test_flag(
+                rec->core.flag, args->fc->filter_incl, args->fc->filter_excl)
+        );
 
         if (!is_read_filtered) {
             prev_rec_pos = rec->core.pos;
@@ -262,46 +285,67 @@ uint32_t process_records(args_t *args)
                 /* Non-target good hits for previous chromosome */
                 if (args->prev_chrom_idx >= 0) {
                     if (args->do_cov_mask) {
-                        handle_coverage_mask(args->coverage, args->cov_mask_ti,
-                                             args->prev_chrom_idx,
-                                             args->prev_chrom_len);
+                        handle_coverage_mask(
+                            args->coverage,
+                            args->cov_mask_ti,
+                            args->prev_chrom_idx,
+                            args->prev_chrom_len);
                     }
 
                     if (args->do_wgs) {
-                        handle_wgs_coverage(args->coverage, args->cm_wgs,
-                                            args->ci_wgs, args->prev_chrom_len);
+                        handle_wgs_coverage(
+                            args->coverage,
+                            args->cm_wgs,
+                            args->ci_wgs,
+                            args->prev_chrom_len);
                     }
 
                     if (args->do_capture) {
                         handle_target_coverage(
-                            args->coverage, args->cm, args->ci, args->ti,
-                            args->prev_chrom_idx, args->prev_chrom_name,
+                            args->coverage,
+                            args->cm,
+                            args->ci,
+                            args->ti,
+                            args->prev_chrom_idx,
+                            args->prev_chrom_name,
                             args->prev_chrom_len);
-                        handle_miss_reads(args->coverage, args->cm, args->ti,
-                                          args->prev_chrom_idx,
-                                          args->prev_chrom_len);
+                        handle_miss_reads(
+                            args->coverage,
+                            args->cm,
+                            args->ti,
+                            args->prev_chrom_idx,
+                            args->prev_chrom_len);
                     }
                 }
 
                 /* Next chromosome id, if available */
                 if (args->curr_chrom_idx >= 0) {
                     /* Reset entire coverage array */
-                    clear_coverage(args->coverage, 0, args->curr_chrom_len,
-                                   args->curr_chrom_len);
+                    clear_coverage(
+                        args->coverage,
+                        0,
+                        args->curr_chrom_len,
+                        args->curr_chrom_len);
 
                     if (args->do_wgs) {
                         args->cm_wgs->b_total += args->curr_chrom_len;
                     }
                     if (args->do_capture) {
                         args->cm->b_total += args->curr_chrom_len;
-                        set_target_cov(args->target_cov, args->cm, args->ti,
-                                       args->curr_chrom_idx,
-                                       args->curr_chrom_len);
+                        set_target_cov(
+                            args->target_cov,
+                            args->cm,
+                            args->ti,
+                            args->curr_chrom_idx,
+                            args->curr_chrom_len);
 
                         if (args->do_cov_mask) {
                             handle_coverage_mask_target(
-                                args->target_cov, args->cm, args->cov_mask_ti,
-                                args->curr_chrom_idx, args->curr_chrom_len);
+                                args->target_cov,
+                                args->cm,
+                                args->cov_mask_ti,
+                                args->curr_chrom_idx,
+                                args->curr_chrom_len);
                         }
                     }
                 }
@@ -310,13 +354,20 @@ uint32_t process_records(args_t *args)
 
             if (!is_read_filtered) {
                 /* Process read for target and coverage info */
-                capture_process_record(rec, args->coverage, args->target_cov,
-                                       args->cm_wgs, args->cm, args->curr_chrom_len,
-                                       args->remove_dups);
+                capture_process_record(
+                    rec,
+                    args->coverage,
+                    args->target_cov,
+                    args->cm_wgs,
+                    args->cm,
+                    args->curr_chrom_len,
+                    args->remove_dups);
             }
         }
 
-        if (args->verbose && ++args->num_records_processed % args->interval == 0) {
+        if (args->verbose &&
+            ++args->num_records_processed % args->interval == 0)
+        {
             log_info("%lu records processed ...", args->num_records_processed);
         }
     }
@@ -342,21 +393,36 @@ void finalize_results(args_t *args)
     /* Target coverage and miss reads for last chromosome */
     if ((args->do_wgs || args->do_capture) && args->curr_chrom_idx >= 0) {
         if (args->do_cov_mask) {
-            handle_coverage_mask(args->coverage, args->cov_mask_ti,
-                                 args->curr_chrom_idx, args->curr_chrom_len);
+            handle_coverage_mask(
+                args->coverage,
+                args->cov_mask_ti,
+                args->curr_chrom_idx,
+                args->curr_chrom_len);
         }
 
         if (args->do_wgs) {
-            handle_wgs_coverage(args->coverage, args->cm_wgs, args->ci_wgs,
-                                args->curr_chrom_len);
+            handle_wgs_coverage(
+                args->coverage,
+                args->cm_wgs,
+                args->ci_wgs,
+                args->curr_chrom_len);
         }
 
         if (args->do_capture) {
-            handle_target_coverage(args->coverage, args->cm, args->ci, args->ti,
-                                   args->curr_chrom_idx, args->curr_chrom_name,
-                                   args->curr_chrom_len);
-            handle_miss_reads(args->coverage, args->cm, args->ti,
-                              args->curr_chrom_idx, args->curr_chrom_len);
+            handle_target_coverage(
+                args->coverage,
+                args->cm,
+                args->ci,
+                args->ti,
+                args->curr_chrom_idx,
+                args->curr_chrom_name,
+                args->curr_chrom_len);
+            handle_miss_reads(
+                args->coverage,
+                args->cm,
+                args->ti,
+                args->curr_chrom_idx,
+                args->curr_chrom_len);
         }
     }
 
@@ -407,55 +473,51 @@ void finalize_results(args_t *args)
 
 #ifdef USE_PTHREAD
 /**
- * Pthread barrier-synced function to read bam1_t records into buffers.
+ * Pthread function to read bam1_t records into buffers.
  */
 void *pt_read_bam(void *arg)
 {
     args_t *args = (args_t *)arg;
-    uint32_t record_idx = 0;
+    args->read_section_idx = 0;
+    args->read_buff = args->rec_buff_arr[args->read_section_idx];
+    uint32_t read_size;
 
     do {
-        record_idx = args->read_bam_func(args);
+        /* read section */
+        sem_wait(&args->read_sem);
+        args->read_buff_size[args->read_section_idx] = args->read_bam_func(args);
+        sem_post(&args->process_sem);
 
-        /* sync point 1 */
-        pthread_barrier_wait(&args->barrier1);
-
-        /* set read buff size for processing */
-        args->read_buff_size = record_idx;
-
-        /* swap buffer in use */
-        args->read_buff = (args->read_buff == args->rec_buff_arr[0])
-                              ? args->rec_buff_arr[1]
-                              : args->rec_buff_arr[0];
-
-        /* sync point 2 */
-        pthread_barrier_wait(&args->barrier2);
-    } while (args->read_buff_size > 0);
+        /* advance to next section in ring buffer */
+        read_size = args->read_buff_size[args->process_section_idx];
+        args->read_section_idx = (args->read_section_idx + 1) % RECORD_BUFFER_SECTIONS;
+        args->read_buff = args->rec_buff_arr[args->read_section_idx];
+    } while (read_size > 0);
 
     pthread_exit(NULL);
 }
 
 /**
- * Pthread barrier-synced function to process bam1_t records read into buffers.
+ * Pthread function to process bam1_t records read into buffers.
  */
 void *pt_process_records(void *arg)
 {
     args_t *args = (args_t *)arg;
+    args->process_section_idx = 0;
+    args->curr_buff = args->rec_buff_arr[args->process_section_idx];
+    uint32_t process_size;
 
     do {
+        /* process section */
+        sem_wait(&args->process_sem);
         process_records(args);
+        process_size = args->read_buff_size[args->process_section_idx];
+        sem_post(&args->read_sem);
 
-        /* sync point 1 */
-        pthread_barrier_wait(&args->barrier1);
-
-        /* swap buffer in use */
-        args->curr_buff = (args->curr_buff == args->rec_buff_arr[0])
-                              ? args->rec_buff_arr[1]
-                              : args->rec_buff_arr[0];
-
-        /* sync point 2 */
-        pthread_barrier_wait(&args->barrier2);
-    } while (args->read_buff_size > 0);
+        /* advance to next section in ring buffer */
+        args->process_section_idx = (args->process_section_idx + 1) % RECORD_BUFFER_SECTIONS;
+        args->curr_buff = args->rec_buff_arr[args->process_section_idx];
+    } while (process_size > 0);
 
     finalize_results(args);
 
@@ -468,17 +530,17 @@ void *pt_process_records(void *arg)
  */
 void read_and_process(args_t *args)
 {
+    size_t section_idx = 0;
     args->read_buff = args->curr_buff = args->rec_buff_arr[0];
 
-    /* while records are still being loaded to buffers */
-    while ((args->read_buff_size = args->read_bam_func(args)) > 0) {
+    /* while read records */
+    while (args->read_bam_func(args) > 0) {
         /* process ... */
         process_records(args);
-        /* then swap buffers */
-        args->curr_buff = args->read_buff =
-            (args->read_buff == args->rec_buff_arr[0])
-                ? args->rec_buff_arr[1]
-                : args->rec_buff_arr[0];
+        /* then advance to next section in ring buffer */
+        section_idx = (section_idx + 1) % RECORD_BUFFER_SECTIONS;
+        args->curr_buff = args->read_buff = args->rec_buff_arr[section_idx];
+        args->read_section_idx = args->process_section_idx = section_idx;
     }
 
     finalize_results(args);

@@ -68,14 +68,12 @@ AC_CHECK_HEADER([htslib/hts.h],
 dnl Check pthread/pthread_barrier extension needed for -p option
 AC_ARG_ENABLE([multithreading],
     [AS_HELP_STRING([--enable-multithreading],
-                    [enable multithreading (requires pthread_barrier)])])
+                    [enable pthread-based multithreading])])
 
 AS_IF([test "x$enable_multithreading" = "xyes"], [
     AC_CHECK_HEADER([pthread.h],
         [AC_SEARCH_LIBS([pthread_create], [pthread],
-            [AC_SEARCH_LIBS([pthread_barrier_init], [pthread],
-                [AC_DEFINE([USE_PTHREAD])],
-                [AC_MSG_WARN([Failed to find function pthread_barrier_init, disabling AlignStats multithreading support])])],
+            [AC_DEFINE([USE_PTHREAD])],
             [AC_MSG_WARN([Failed to find pthread library, disabling AlignStats multithreading support])])],
         [AC_MSG_WARN([Failed to find pthread headers, disabling AlignStats multithreading support])])
 ])

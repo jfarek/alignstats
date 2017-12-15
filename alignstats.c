@@ -120,7 +120,7 @@ int main(int argc, char **argv)
     cov_mask_fp = NULL;
     regions_fp = NULL;
     ref_buff = NULL;
-    min_buffer_reads = 200;
+    min_buffer_reads = RECORD_BUFFER_SIZE;
     memset(mode, '\0', MODE_LEN);
     memset(fmt, '\0', FMT_LEN);
 
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
     args->new_chrom = true;
     args->process_cigar = false;
     args->order_warn = true;
-    args->reads_per_buffer = RECORD_BUFFER_SIZE;
+    args->reads_per_buffer = RECORD_BUFFER_SIZE / RECORD_BUFFER_SECTIONS;
 
     args->iter = NULL;
     args->index = NULL;
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
                 log_warning("Given value for -r is too small, using %u", min_buffer_reads);
                 max_reads_tmp = min_buffer_reads;
             }
-            args->reads_per_buffer = max_reads_tmp / 2;
+            args->reads_per_buffer = max_reads_tmp / RECORD_BUFFER_SECTIONS;
             break;
         case 'o': /* Output filename */
             output_fn = optarg;
@@ -619,25 +619,24 @@ int main(int argc, char **argv)
         die_on_alloc_fail(args->target_cov);
     }
 
-    args->rec_buff_arr[0] = malloc(args->reads_per_buffer * sizeof(bam1_t *));
-    die_on_alloc_fail(args->rec_buff_arr[0]);
-    args->rec_buff_arr[1] = malloc(args->reads_per_buffer * sizeof(bam1_t *));
-    die_on_alloc_fail(args->rec_buff_arr[1]);
+    for (uint32_t i = 0; i < RECORD_BUFFER_SECTIONS; ++i) {
+        args->rec_buff_arr[i] = malloc(args->reads_per_buffer * sizeof(bam1_t *));
+        die_on_alloc_fail(args->rec_buff_arr[i]);
+    }
     rec_buff_allocated = true;
 
-    for (uint32_t i = 0; i < args->reads_per_buffer; ++i) {
-        args->rec_buff_arr[0][i] = bam_init1();
-        args->rec_buff_arr[1][i] = bam_init1();
+    for (uint32_t i = 0; i < RECORD_BUFFER_SECTIONS; ++i) {
+        for (uint32_t j = 0; j < args->reads_per_buffer; ++j) {
+            args->rec_buff_arr[i][j] = bam_init1();
+        }
     }
 
-    args->read_buff = args->rec_buff_arr[0];
-    args->curr_buff = args->rec_buff_arr[1];
-    args->read_buff_size = 0;
+    memset(args->read_buff_size, 0, RECORD_BUFFER_SECTIONS * sizeof(uint32_t));
 
     if (args->do_pthread) {
 #ifdef USE_PTHREAD
-        pthread_barrier_init(&args->barrier1, NULL, 2);
-        pthread_barrier_init(&args->barrier2, NULL, 2);
+        sem_init(&args->read_sem, 0, RECORD_BUFFER_SECTIONS);
+        sem_init(&args->process_sem, 0, 0);
 
         read_bam_thread = calloc(1, sizeof(pthread_t));
         die_on_alloc_fail(read_bam_thread);
@@ -677,8 +676,8 @@ int main(int argc, char **argv)
         free(read_bam_thread);
         free(process_records_thread);
 
-        pthread_barrier_destroy(&args->barrier1);
-        pthread_barrier_destroy(&args->barrier2);
+        sem_destroy(&args->read_sem);
+        sem_destroy(&args->process_sem);
     } else {
 #else
         log_warning("AlignStats not built with pthread, multithreading disabled.");
@@ -701,9 +700,11 @@ end:
     }
 
     if (rec_buff_allocated) {
-        for (uint32_t i = 0; i < args->reads_per_buffer; ++i) {
-            bam_destroy1(args->rec_buff_arr[0][i]);
-            bam_destroy1(args->rec_buff_arr[1][i]);
+        for (uint32_t i = 0; i < RECORD_BUFFER_SECTIONS; ++i) {
+            for (uint32_t j = 0; j < args->reads_per_buffer; ++j) {
+                bam_destroy1(args->rec_buff_arr[i][j]);
+            }
+            free(args->rec_buff_arr[i]);
         }
     }
 
@@ -727,8 +728,6 @@ end:
     bed_destroy(args->cov_mask_ti);
     free(args->coverage);
     free(args->target_cov);
-    free(args->rec_buff_arr[0]);
-    free(args->rec_buff_arr[1]);
 
     if (regions_fn != NULL) {
         bed_destroy(args->regions);
