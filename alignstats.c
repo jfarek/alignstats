@@ -628,7 +628,7 @@ int main(int argc, char **argv)
     if (args->do_pthread) {
 #ifdef USE_PTHREAD
         sem_init(&args->read_sem, 0, RECORD_BUFFER_SECTIONS);
-        sem_init(&args->process_sem, 0, 0);
+        sem_init(&args->proc_sem, 0, 0);
 
         read_bam_thread = calloc(1, sizeof(pthread_t));
         die_on_alloc_fail(read_bam_thread);
@@ -669,7 +669,7 @@ int main(int argc, char **argv)
         free(process_records_thread);
 
         sem_destroy(&args->read_sem);
-        sem_destroy(&args->process_sem);
+        sem_destroy(&args->proc_sem);
     } else {
 #else
         log_warning("AlignStats not built with pthread, multithreading disabled.");

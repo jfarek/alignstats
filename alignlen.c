@@ -68,10 +68,10 @@ void align_len_process_record(bam1_t *rec, align_len_metrics_t *alm)
  */
 void align_len_finalize(align_len_metrics_t *alm)
 {
-    bool median_set;
-    uint64_t k, sum, mode_length, curr_length, median_idx;
     tree_node_key_t *keyset;
     tree_node_t *node;
+    uint64_t k, sum, mode_length, curr_length, median_idx;
+    bool median_set = false;
 
     if (tree_map_set_keyset(&keyset, alm->length_map)) {
         k = sum = mode_length = 0;
@@ -110,7 +110,7 @@ void align_len_finalize(align_len_metrics_t *alm)
             }
 
             alm->std_dev = k > 1
-                ? sqrt(((double)alm->sum_sq - (double)(sum * sum) / (double)k) /
+                ? sqrt(((double)alm->sum_sq - ((double)sum * (double)sum) / (double)k) /
                        (double)(k - 1))
                 : 0.0;
         } else {

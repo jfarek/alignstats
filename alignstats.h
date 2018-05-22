@@ -33,7 +33,7 @@
 struct args {
     /* Pthread stuff */
 #ifdef USE_PTHREAD
-    sem_t read_sem, process_sem;
+    sem_t read_sem, proc_sem;
 #endif
     bam1_t **rec_buff_arr[RECORD_BUFFER_SECTIONS];
     bam1_t **read_buff;

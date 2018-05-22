@@ -213,8 +213,7 @@ uint32_t process_records(args_t *args)
             }
 
             if (args->order_warn &&
-                !check_order_tid(
-                    args->prev_mapped_chrom_idx, args->curr_chrom_idx))
+                !check_order_tid(args->prev_mapped_chrom_idx, args->curr_chrom_idx))
             {
                 log_warning(
                     "Record not in coordinate-sorted order. "
@@ -380,15 +379,6 @@ uint32_t process_records(args_t *args)
  */
 void finalize_results(args_t *args)
 {
-    /* Finalize results */
-    if (args->do_alignment) {
-        align_len_finalize(args->alm_all);
-        align_len_finalize(args->alm_read1);
-        align_len_finalize(args->alm_read2);
-        /*align_len_finalize(args->alm_fragment);*/
-        insert_size_finalize(args->ism);
-    }
-
     /* Target coverage and miss reads for last chromosome */
     if ((args->do_wgs || args->do_capture) && args->curr_chrom_idx >= 0) {
         if (args->do_cov_mask) {
@@ -423,6 +413,15 @@ void finalize_results(args_t *args)
                 args->curr_chrom_idx,
                 args->curr_chrom_len);
         }
+    }
+
+    /* Finalize results */
+    if (args->do_alignment) {
+        align_len_finalize(args->alm_all);
+        align_len_finalize(args->alm_read1);
+        align_len_finalize(args->alm_read2);
+        /*align_len_finalize(args->alm_fragment);*/
+        insert_size_finalize(args->ism);
     }
 
     if (args->do_wgs) {
@@ -485,7 +484,7 @@ void *pt_read_bam(void *arg)
         /* read section */
         sem_wait(&args->read_sem);
         args->read_buff_size[args->read_section_idx] = args->read_bam_func(args);
-        sem_post(&args->process_sem);
+        sem_post(&args->proc_sem);
 
         /* advance to next section in ring buffer */
         read_size = args->read_buff_size[args->process_section_idx];
@@ -508,7 +507,7 @@ void *pt_process_records(void *arg)
 
     do {
         /* process section */
-        sem_wait(&args->process_sem);
+        sem_wait(&args->proc_sem);
         process_records(args);
         process_size = args->read_buff_size[args->process_section_idx];
         sem_post(&args->read_sem);

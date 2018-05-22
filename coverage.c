@@ -76,7 +76,7 @@ void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci, bed_t 
     }
 
     cm->c_std_dev = k > 1
-        ? sqrt(((double)cm->c_sum_sq - (double)(sum * sum) / (double)k) /
+        ? sqrt(((double)cm->c_sum_sq - ((double)sum * (double)sum) / (double)k) /
                (double)(k - 1))
         : 0.0;
 
@@ -109,7 +109,7 @@ void incr_cov_histo(coverage_info_t *ci, uint32_t cov)
         if (tmp_cov_histo != NULL) {
             ci->cov_histo = tmp_cov_histo;
         } else {
-            // kill program
+            /* kill program */
             free(ci->cov_histo);
             die_on_alloc_fail(tmp_cov_histo);
             return;

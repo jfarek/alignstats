@@ -115,13 +115,11 @@ int _get_chrom_idx(char **chrom_names, char *chrom_buffer, int32_t n_targets)
  */
 bool _parse_bed(FILE *fp, char *line_buffer, char *chrom_buffer, int *start, int *end)
 {
-    bool ret = true;
     int num_read_chrom;
     char *c_start, *c_end;
-    size_t strlen_browser, strlen_track;
-
-    strlen_browser = strlen("browser");
-    strlen_track = strlen("track");
+    bool ret = true;
+    size_t strlen_browser = strlen("browser");
+    size_t strlen_track = strlen("track");
 
     if (fgets(line_buffer, CHROM_BUFFER_SIZE, fp) == NULL) {
         ret = false;

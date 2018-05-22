@@ -1,5 +1,6 @@
 #include "insertsize.h"
 #include "err.h"
+#include "logging.h"
 #include "print.h"
 #include <math.h>
 #include <stdbool.h>
@@ -17,9 +18,11 @@ insert_size_metrics_t *insert_size_metrics_init()
     die_on_alloc_fail(ism);
 
     ism->insert_size_map = tree_map_init();
-    ism->filter_incl = BAM_FPROPER_PAIR;
+    ism->filter_incl = BAM_FPAIRED |
+                       BAM_FPROPER_PAIR;
     ism->filter_excl = BAM_FREAD1 |
                        BAM_FSECONDARY |
+                       BAM_FSUPPLEMENTARY |
                        BAM_FUNMAP |
                        BAM_FMUNMAP |
                        BAM_FDUP;
@@ -48,8 +51,7 @@ void insert_size_process_record(bam1_t *rec, insert_size_metrics_t *ism)
     int32_t isize;
     tree_node_t *node;
 
-    if (rec->core.flag & BAM_FPAIRED &&         /* reads in pair */
-        (rec->core.flag & ism->filter_incl) &&  /* reads to filter in */
+    if (((rec->core.flag & ism->filter_incl) == ism->filter_incl) && /* reads to filter in */
         !(rec->core.flag & ism->filter_excl) && /* reads to filter out */
         rec->core.tid == rec->core.mtid)        /* read and mate on same chr */
     {
@@ -87,6 +89,7 @@ void insert_size_finalize(insert_size_metrics_t *ism)
                 mode_size = curr_size;
                 ism->mode = (uint64_t)keyset[i];
             }
+            log_warning("%d\t%d", keyset[i], node->value);
 
             k += curr_size;
             sum += (uint64_t)keyset[i] * curr_size;
@@ -112,7 +115,7 @@ void insert_size_finalize(insert_size_metrics_t *ism)
 
             /* Sample standard deviation insertion size */
             ism->std_dev = k > 1
-                ? sqrt(((double)ism->sum_sq - (double)(sum * sum) / (double)k) /
+                ? sqrt(((double)ism->sum_sq - ((double)sum * (double)sum) / (double)k) /
                        (double)(k - 1))
                 : 0.0;
         } else {
