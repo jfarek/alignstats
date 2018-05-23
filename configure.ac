@@ -1,5 +1,5 @@
 dnl If anyone wants to improve on this go right ahead
-AC_INIT([AlignStats], 0.2)
+AC_INIT([AlignStats], 0.3)
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PREREQ([2.63])

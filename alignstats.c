@@ -14,7 +14,7 @@
  * ------===< AlignStats >===------
  * Produce a report of alignment and coverage metrics for an input SAM, BAM, or CRAM file.
  *
- * Copyright 2015-2017 Baylor College of Medicine Human Genome Sequencing Center
+ * Copyright 2015-2018 Baylor College of Medicine Human Genome Sequencing Center
  *
  * Author: Jesse Farek (farek at bcm dot edu)
  * License: BSD 3-clause (see LICENSE or https://opensource.org/licenses/BSD-3-Clause)

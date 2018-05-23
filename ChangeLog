@@ -13,3 +13,9 @@ AlignStats v0.2 (15 Dec 2017)
 - Metrics have been added for coverage and insert size standard deviation.
 - NM tag is now used to count mismatches instead of MD tag.
 - Fix how bases on target or buffer are counted.
+
+AlignStats v0.3 (23 May 2018)
+
+- Report is now in JSON format.
+- Added standard deviation metrics for aligned read length, insert size, and
+coverage.
