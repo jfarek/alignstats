@@ -89,7 +89,6 @@ void insert_size_finalize(insert_size_metrics_t *ism)
                 mode_size = curr_size;
                 ism->mode = (uint64_t)keyset[i];
             }
-            log_warning("%d\t%d", keyset[i], node->value);
 
             k += curr_size;
             sum += (uint64_t)keyset[i] * curr_size;

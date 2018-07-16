@@ -374,6 +374,7 @@ int main(int argc, char **argv)
         if (hts_set_fai_filename(args->input_sf, ref_buff) != 0) {
             log_error("hts_set_fai_filename() failed for \"%s\".", ref_buff);
             perror(NULL);
+            free(ref_buff);
             exit_val = EXIT_FAILURE;
             goto end;
         }
