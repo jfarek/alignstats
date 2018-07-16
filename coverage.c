@@ -575,33 +575,33 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
         case BAM_CMATCH:
         case BAM_CEQUAL:
         case BAM_CDIFF:
-            start_pos = pos = start + ref_pos;
-            end_pos = start_pos + oplen - 1;
-
-            if (start_pos < 0) {
-                start_pos = 0;
-                pos = 0;
-            }
-            if (end_pos >= chrom_len) {
-                end_pos = chrom_len - 1;
-            }
-
             /* Record coverage */
-            qual = bqual + ref_pos;
-            while (pos <= end_pos) {
-                if (get_coverage(coverage[pos]) < COV_MAX) {
-                    ++coverage[pos];
-                } else {
-                    /* Y'know just in case */
-                    log_warning("Coverage of greater than %u detected. "
-                                "Coverage statistics may not be accurate.", COV_MAX);
-                }
-                ++pos;
-                ++qual;
-            }
-            /* pos == end_pos */
-
             if (coverage != NULL) {
+                start_pos = pos = start + ref_pos;
+                end_pos = start_pos + oplen - 1;
+
+                if (start_pos < 0) {
+                    start_pos = 0;
+                    pos = 0;
+                }
+                if (end_pos >= chrom_len) {
+                    end_pos = chrom_len - 1;
+                }
+
+                qual = bqual + ref_pos;
+                while (pos <= end_pos) {
+                    if (get_coverage(coverage[pos]) < COV_MAX) {
+                        ++coverage[pos];
+                    } else {
+                        /* Y'know just in case */
+                        log_warning("Coverage of greater than %u detected. "
+                                    "Coverage statistics may not be accurate.", COV_MAX);
+                    }
+                    ++pos;
+                    ++qual;
+                }
+
+                /* pos == end_pos */
                 while (--pos >= start_pos) {
                     target = get_target(coverage[pos]);
                     if (target == TARGET_BUFFER) {
@@ -612,6 +612,7 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                     }
                 }
             }
+
             ref_pos += oplen;
             break;
         /* D: advance ref_pos past deletion */
