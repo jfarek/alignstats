@@ -441,7 +441,7 @@ void set_target_cov(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
 
             /* Target */
             start_ = (start > 0) ? start : 0;
-            end_ = (end < chrom_len) ? end + 1 : chrom_len;
+            end_ = (end < chrom_len) ? end : chrom_len;
             for (size_t pos = start_; pos <= end_; ++pos) {
                 coverage[pos] |= TARGET_IN << TARGET_SHIFT;
             }
