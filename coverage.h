@@ -50,6 +50,7 @@ struct capture_metrics {
     uint64_t b_masked;         /* Masked bases */
     uint64_t b_1_plus_hits;    /* Target bases with >= 1X coverage */
     uint64_t b_10_plus_hits;   /* Target bases with >= 10X coverage */
+    uint64_t b_15_plus_hits;   /* Target bases with >= 15X coverage */
     uint64_t b_20_plus_hits;   /* Target bases with >= 20X coverage */
     uint64_t b_30_plus_hits;   /* Target bases with >= 30X coverage */
     uint64_t b_40_plus_hits;   /* Target bases with >= 40X coverage */
@@ -102,6 +103,6 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                             capture_metrics_t *cm_wgs,
                             capture_metrics_t *cm_cap, int32_t chrom_len,
                             bool remove_dups);
-void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti);
+void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti, char *key_buffer, char *value_buffer);
 
 #endif /* _COVERAGE_H */

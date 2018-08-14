@@ -182,13 +182,8 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
 /**
  * Add alignment metrics to report.
  */
-void align_report(report_t *report, align_metrics_t *am, read_type_t rt)
+void align_report(report_t *report, align_metrics_t *am, read_type_t rt, char *key_buffer, char *value_buffer)
 {
-    char *key_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(key_buffer);
-    char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(value_buffer);
-
     /*
      * Add key prefix for read1 and read2
      * All reads: prefix = ""
@@ -337,7 +332,4 @@ void align_report(report_t *report, align_metrics_t *am, read_type_t rt)
     copy_to_buffer(key_start, "Q20BasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_q20, am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
-
-    free(key_buffer);
-    free(value_buffer);
 }

@@ -30,6 +30,6 @@ void filter_counter_destroy(filter_counter_t *fc);
 
 /* Filter counter calculation */
 void filter_counter_process_record(bam1_t *rec, filter_counter_t *fc);
-void filter_counter_report(report_t *report, filter_counter_t *fc);
+void filter_counter_report(report_t *report, filter_counter_t *fc, char *key_buffer, char *value_buffer);
 
 #endif /* _FILTER_H */

@@ -132,7 +132,7 @@ void handle_wgs_coverage(const uint32_t *coverage, capture_metrics_t *cm,
         cov = get_coverage(coverage[i]);
 
         /* Bases with coverage of at least 1, 10, 20, etc. */
-        if (cov < 30) {
+        if (cov < 20) {
             if (cov < 10) {
                 if (cov < 1) {
                     goto cov0;
@@ -140,22 +140,26 @@ void handle_wgs_coverage(const uint32_t *coverage, capture_metrics_t *cm,
                     goto cov1;
                 }
             } else {
-                if (cov < 20) {
+                if (cov < 15) {
                     goto cov10;
                 } else {
-                    goto cov20;
+                    goto cov15;
                 }
             }
         } else {
-            if (cov < 50) {
-                if (cov < 40) {
-                    goto cov30;
+            if (cov < 40) {
+                if (cov < 30) {
+                    goto cov20;
                 } else {
-                    goto cov40;
+                    goto cov30;
                 }
             } else {
                 if (cov < 100) {
-                    goto cov50;
+                    if (cov < 50) {
+                        goto cov40;
+                    } else {
+                        goto cov50;
+                    }
                 } else {
                     if (cov < 1000) {
                         goto cov100;
@@ -172,6 +176,7 @@ cov50:  ++cm->b_50_plus_hits;
 cov40:  ++cm->b_40_plus_hits;
 cov30:  ++cm->b_30_plus_hits;
 cov20:  ++cm->b_20_plus_hits;
+cov15:  ++cm->b_15_plus_hits;
 cov10:  ++cm->b_10_plus_hits;
 cov1:   ++cm->b_1_plus_hits;
         cm->c_total += (uint64_t)cov;
@@ -204,7 +209,7 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
             cov = get_coverage(coverage[j]);
 
             /* Bases with coverage of at least 1, 10, 20, etc. */
-            if (cov < 30) {
+            if (cov < 20) {
                 if (cov < 10) {
                     if (cov < 1) {
                         goto tgtcov0;
@@ -212,22 +217,26 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
                         goto tgtcov1;
                     }
                 } else {
-                    if (cov < 20) {
+                    if (cov < 15) {
                         goto tgtcov10;
                     } else {
-                        goto tgtcov20;
+                        goto tgtcov15;
                     }
                 }
             } else {
-                if (cov < 50) {
-                    if (cov < 40) {
-                        goto tgtcov30;
+                if (cov < 40) {
+                    if (cov < 30) {
+                        goto tgtcov20;
                     } else {
-                        goto tgtcov40;
+                        goto tgtcov30;
                     }
                 } else {
                     if (cov < 100) {
-                        goto tgtcov50;
+                        if (cov < 50) {
+                            goto tgtcov40;
+                        } else {
+                            goto tgtcov50;
+                        }
                     } else {
                         if (cov < 1000) {
                             goto tgtcov100;
@@ -244,6 +253,7 @@ tgtcov50:   ++cm->b_50_plus_hits;
 tgtcov40:   ++cm->b_40_plus_hits;
 tgtcov30:   ++cm->b_30_plus_hits;
 tgtcov20:   ++cm->b_20_plus_hits;
+tgtcov15:   ++cm->b_15_plus_hits;
 tgtcov10:   ++cm->b_10_plus_hits;
 tgtcov1:    ++cm->b_1_plus_hits;
             cm->c_total += (uint64_t)cov;
@@ -636,13 +646,8 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
 /**
  * Write capture metrics to report.
  */
-void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
+void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti, char *key_buffer, char *value_buffer)
 {
-    char *key_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(key_buffer);
-    char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(value_buffer);
-
     const char *prefix = (ti == NULL) ? "Wgs" : "Cap";
     size_t prefix_len = strlen(prefix);
     size_t copy_size = REPORT_BUFFER_SIZE - prefix_len;
@@ -717,6 +722,14 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
 
     copy_to_buffer(key_start, "CoverageBases10Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_10_plus_hits, denominator);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "CoverageBases15", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_15_plus_hits);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "CoverageBases15Pct", copy_size);
+    print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_15_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "CoverageBases20", copy_size);
@@ -825,7 +838,4 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti)
         print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->r_in_target + cm->r_in_buffer, cm->r_aligned);
         report_add_key_value(report, key_buffer, value_buffer);
     }
-
-    free(key_buffer);
-    free(value_buffer);
 }

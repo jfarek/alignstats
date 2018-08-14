@@ -52,13 +52,8 @@ void filter_counter_process_record(bam1_t *rec, filter_counter_t *fc)
 /**
  * Write metrics in fc to report.
  */
-void filter_counter_report(report_t *report, filter_counter_t *fc)
+void filter_counter_report(report_t *report, filter_counter_t *fc, char *key_buffer, char *value_buffer)
 {
-    char *key_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(key_buffer);
-    char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(value_buffer);
-
     uint64_t r_total = fc->r_filtered + fc->r_unfiltered;
 
     copy_to_buffer(key_buffer, "TotalReads", REPORT_BUFFER_SIZE);
@@ -80,7 +75,4 @@ void filter_counter_report(report_t *report, filter_counter_t *fc)
     copy_to_buffer(key_buffer, "FilteredReadsPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, fc->r_filtered, r_total);
     report_add_key_value(report, key_buffer, value_buffer);
-
-    free(key_buffer);
-    free(value_buffer);
 }

@@ -131,13 +131,8 @@ fail:
 /**
  * Write metrics in ism to report.
  */
-void insert_size_report(report_t *report, insert_size_metrics_t *ism)
+void insert_size_report(report_t *report, insert_size_metrics_t *ism, char *key_buffer, char *value_buffer)
 {
-    char *key_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(key_buffer);
-    char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(value_buffer);
-
     copy_to_buffer(key_buffer, "InsertSizeMean", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", ism->mean);
     report_add_key_value(report, key_buffer, value_buffer);
@@ -153,7 +148,4 @@ void insert_size_report(report_t *report, insert_size_metrics_t *ism)
     copy_to_buffer(key_buffer, "InsertSizeStandardDeviation", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", ism->std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
-
-    free(key_buffer);
-    free(value_buffer);
 }

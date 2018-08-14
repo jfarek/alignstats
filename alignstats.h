@@ -68,6 +68,8 @@ struct args {
     bool process_cigar;
     bool order_warn;
 
+    /* Files and alignment */
+    char *input_fn;
     hts_itr_t *iter;
     hts_idx_t *index;
     bed_t *regions;

@@ -87,7 +87,7 @@ enum input_format { INPUT_SAM = 0, INPUT_BAM, INPUT_CRAM };
 int main(int argc, char **argv)
 {
     bool input_from_stdin, rec_buff_allocated;
-    char *input_fn, *output_fn, *target_fn, *regions_fn;
+    char /* *input_fn,*/ *output_fn, *target_fn, *regions_fn;
     char *cov_mask_fn, *reference_fn, *ref_buff, *end;
     char mode[MODE_LEN], fmt[FMT_LEN];
     int c, exit_val;
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
     exit_val = EXIT_SUCCESS;
     input_from_stdin = false;
     rec_buff_allocated = false;
-    input_fn = NULL;
+    /*input_fn = NULL;*/
     output_fn = NULL;
     target_fn = NULL;
     cov_mask_fn = NULL;
@@ -153,6 +153,7 @@ int main(int argc, char **argv)
     args->order_warn = true;
     args->reads_per_buffer = RECORD_BUFFER_SIZE / RECORD_BUFFER_SECTIONS;
 
+    args->input_fn = NULL;
     args->iter = NULL;
     args->index = NULL;
     args->regions = NULL;
@@ -235,7 +236,7 @@ int main(int argc, char **argv)
             goto end;
             break;
         case 'i': /* Input filename */
-            input_fn = optarg;
+            args->input_fn = optarg;
             break;
         case 'j': /* Input file format */
             strncpy(fmt, optarg, FMT_LEN);
@@ -289,11 +290,11 @@ int main(int argc, char **argv)
         goto end;
     }
 
-    if (input_fn == NULL) {
-        input_fn = "-";
+    if (args->input_fn == NULL) {
+        args->input_fn = "-";
     }
 
-    if (strcmp(input_fn, "-") == 0) {
+    if (strcmp(args->input_fn, "-") == 0) {
         input_from_stdin = true;
     }
 
@@ -315,13 +316,13 @@ int main(int argc, char **argv)
         }
     /* Guess format from filename */
     } else if (!input_from_stdin) {
-        fn_len = strlen(input_fn);
+        fn_len = strlen(args->input_fn);
 
-        if (fn_len >= 3 && strcmp(input_fn + fn_len - 3, "bam") == 0) {
+        if (fn_len >= 3 && strcmp(args->input_fn + fn_len - 3, "bam") == 0) {
             format = INPUT_BAM;
-        } else if (fn_len >= 4 && strcmp(input_fn + fn_len - 4, "cram") == 0) {
+        } else if (fn_len >= 4 && strcmp(args->input_fn + fn_len - 4, "cram") == 0) {
             format = INPUT_CRAM;
-        } else if (!(fn_len >= 3 && strcmp(input_fn + fn_len - 3, "sam") == 0)) {
+        } else if (!(fn_len >= 3 && strcmp(args->input_fn + fn_len - 3, "sam") == 0)) {
             log_warning("Input filename has an unrecognized file extension.");
         }
     }
@@ -330,20 +331,20 @@ int main(int argc, char **argv)
     case INPUT_BAM:
         strncpy(mode, "rb", 3);
         if (args->verbose) {
-            log_info("Opening input file \"%s\" as BAM file.", input_fn);
+            log_info("Opening input file \"%s\" as BAM file.", args->input_fn);
         }
         break;
     case INPUT_CRAM:
         strncpy(mode, "rc", 3);
         if (args->verbose) {
-            log_info("Opening input file \"%s\" as CRAM file.", input_fn);
+            log_info("Opening input file \"%s\" as CRAM file.", args->input_fn);
         }
         break;
     case INPUT_SAM:
     default:
         strncpy(mode, "r", 2);
         if (args->verbose) {
-            log_info("Opening input file \"%s\" as SAM file.", input_fn);
+            log_info("Opening input file \"%s\" as SAM file.", args->input_fn);
         }
         break;
     }
@@ -355,8 +356,8 @@ int main(int argc, char **argv)
     }
 
     /* Open input file */
-    if ((args->input_sf = sam_open(input_fn, mode)) == NULL) {
-        log_error("Failed to open input file \"%s\".", input_fn);
+    if ((args->input_sf = sam_open(args->input_fn, mode)) == NULL) {
+        log_error("Failed to open input file \"%s\".", args->input_fn);
         perror(NULL);
         exit_val = EXIT_FAILURE;
         goto end;
@@ -384,7 +385,7 @@ int main(int argc, char **argv)
 
     /* Input alignment header */
     if ((args->hdr = sam_hdr_read(args->input_sf)) == NULL) {
-        log_error("Failed to read header for input file \"%s\".", input_fn);
+        log_error("Failed to read header for input file \"%s\".", args->input_fn);
         perror(NULL);
         exit_val = EXIT_FAILURE;
         goto end;
@@ -405,8 +406,8 @@ int main(int argc, char **argv)
             log_error("Cannot process regions on input alignment from stdin.");
             exit_val = EXIT_FAILURE;
             goto end;
-        } else if ((args->index = sam_index_load(args->input_sf, input_fn)) == NULL) {
-            log_error("Failed to read index for input file \"%s\".", input_fn);
+        } else if ((args->index = sam_index_load(args->input_sf, args->input_fn)) == NULL) {
+            log_error("Failed to read index for input file \"%s\".", args->input_fn);
             perror(NULL);
             exit_val = EXIT_FAILURE;
             goto end;

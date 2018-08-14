@@ -25,6 +25,6 @@ void insert_size_metrics_destroy(insert_size_metrics_t *ism);
 /* Insert size metrics calculation */
 void insert_size_process_record(bam1_t *rec, insert_size_metrics_t *ism);
 void insert_size_finalize(insert_size_metrics_t *ism);
-void insert_size_report(report_t *report, insert_size_metrics_t *ism);
+void insert_size_report(report_t *report, insert_size_metrics_t *ism, char *key_buffer, char *value_buffer);
 
 #endif /* _INSERTSIZE_H */

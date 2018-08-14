@@ -24,6 +24,6 @@ void align_len_metrics_destroy(align_len_metrics_t *alm);
 /* Alignment length metrics calculation */
 void align_len_process_record(bam1_t *rec, align_len_metrics_t *alm);
 void align_len_finalize(align_len_metrics_t *alm);
-void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt);
+void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt, char *key_buffer, char *value_buffer);
 
 #endif /* _ALIGNLEN_H */

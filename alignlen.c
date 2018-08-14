@@ -127,13 +127,8 @@ fail:
 /**
  * Add alignment length metrics to report.
  */
-void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt)
+void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt, char *key_buffer, char *value_buffer)
 {
-    char *key_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(key_buffer);
-    char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(value_buffer);
-
     char *key_start;
     size_t prefix_len, copy_size;
 
@@ -162,7 +157,4 @@ void align_len_report(report_t *report, align_len_metrics_t *alm, read_type_t rt
     copy_to_buffer(key_start, "AlignedReadLengthStandardDeviation", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%f", alm->std_dev);
     report_add_key_value(report, key_buffer, value_buffer);
-
-    free(key_buffer);
-    free(value_buffer);
 }

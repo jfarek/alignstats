@@ -75,13 +75,8 @@ void pair_stats_process_record(bam1_t *rec, pair_stats_metrics_t *psm)
 /**
  * Write metrics in psm to report.
  */
-void pair_stats_report(report_t *report, pair_stats_metrics_t *psm)
+void pair_stats_report(report_t *report, pair_stats_metrics_t *psm, char *key_buffer, char *value_buffer)
 {
-    char *key_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(key_buffer);
-    char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
-    die_on_alloc_fail(value_buffer);
-
     copy_to_buffer(key_buffer, "TotalPairs", REPORT_BUFFER_SIZE);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", psm->pairs_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
@@ -121,7 +116,4 @@ void pair_stats_report(report_t *report, pair_stats_metrics_t *psm)
     copy_to_buffer(key_buffer, "ChimericRate", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->cr_improper_pair, psm->cr_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
-
-    free(key_buffer);
-    free(value_buffer);
 }

@@ -27,6 +27,6 @@ void pair_stats_metrics_destroy(pair_stats_metrics_t *psm);
 
 /* Pair statistics metrics calculation */
 void pair_stats_process_record(bam1_t *rec, pair_stats_metrics_t *psm);
-void pair_stats_report(report_t *report, pair_stats_metrics_t *psm);
+void pair_stats_report(report_t *report, pair_stats_metrics_t *psm, char *key_buffer, char *value_buffer);
 
 #endif /* _PAIRSTATS_H */

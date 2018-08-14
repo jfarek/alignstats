@@ -42,6 +42,6 @@ void align_metrics_destroy(align_metrics_t *am);
 
 /* Alignment metrics calculation */
 void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar);
-void align_report(report_t *report, align_metrics_t *am, read_type_t rt);
+void align_report(report_t *report, align_metrics_t *am, read_type_t rt, char *key_buffer, char *value_buffer);
 
 #endif /* _ALIGN_H */

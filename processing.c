@@ -3,12 +3,18 @@
 #include "alignlen.h"
 #include "alignstats.h"
 #include "coverage.h"
+#include "err.h"
 #include "filter.h"
 #include "htslib/hts.h"
 #include "htslib/sam.h"
 #include "insertsize.h"
 #include "logging.h"
 #include "pairstats.h"
+#include "report.h"
+#include "print.h"
+#include "string.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -248,8 +254,7 @@ uint32_t process_records(args_t *args)
         filter_counter_process_record(rec, args->fc);
         is_read_filtered = (
             filter_test_qual(rec->core.qual, args->fc->min_qual) ||
-            filter_test_flag(
-                rec->core.flag, args->fc->filter_incl, args->fc->filter_excl)
+            filter_test_flag(rec->core.flag, args->fc->filter_incl, args->fc->filter_excl)
         );
 
         if (!is_read_filtered) {
@@ -441,32 +446,61 @@ void finalize_results(args_t *args)
         log_info("Writing report.");
     }
 
+    char *key_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
+    die_on_alloc_fail(key_buffer);
+    char *value_buffer = malloc(REPORT_BUFFER_SIZE * sizeof(char));
+    die_on_alloc_fail(value_buffer);
+
+    char *input_fn;
+    if (args->input_fn != NULL) {
+        input_fn = args->input_fn;
+    } else {
+        input_fn = "-";
+    }
+    copy_to_buffer(key_buffer, "InputFileName", REPORT_BUFFER_SIZE);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "\"%s\"", args->input_fn);
+    report_add_key_value(args->report, key_buffer, value_buffer);
+
+    off_t filesize = 0;
+    if (strcmp(args->input_fn, "-") != 0) {
+        struct stat statbuf;
+        stat(input_fn, &statbuf);
+        filesize = statbuf.st_size;
+    }
+
+    copy_to_buffer(key_buffer, "InputFileSize", REPORT_BUFFER_SIZE);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", filesize);
+    report_add_key_value(args->report, key_buffer, value_buffer);
+
     /* Report filtered/unfiltered read counts */
-    filter_counter_report(args->report, args->fc);
+    filter_counter_report(args->report, args->fc, key_buffer, value_buffer);
 
     /* Write alignment stats report */
     if (args->do_alignment) {
-        align_report(args->report, args->am_all, RT_ALL);
-        align_report(args->report, args->am_read1, RT_READ1);
-        align_report(args->report, args->am_read2, RT_READ2);
-        align_len_report(args->report, args->alm_all, RT_ALL);
-        align_len_report(args->report, args->alm_read1, RT_READ1);
-        align_len_report(args->report, args->alm_read2, RT_READ2);
-        pair_stats_report(args->report, args->psm);
-        insert_size_report(args->report, args->ism);
+        align_report(args->report, args->am_all, RT_ALL, key_buffer, value_buffer);
+        align_report(args->report, args->am_read1, RT_READ1, key_buffer, value_buffer);
+        align_report(args->report, args->am_read2, RT_READ2, key_buffer, value_buffer);
+        align_len_report(args->report, args->alm_all, RT_ALL, key_buffer, value_buffer);
+        align_len_report(args->report, args->alm_read1, RT_READ1, key_buffer, value_buffer);
+        align_len_report(args->report, args->alm_read2, RT_READ2, key_buffer, value_buffer);
+        pair_stats_report(args->report, args->psm, key_buffer, value_buffer);
+        insert_size_report(args->report, args->ism, key_buffer, value_buffer);
     }
 
     /* Write whole genome stats report */
     if (args->do_wgs) {
-        capture_report(args->report, args->cm_wgs, NULL);
+        capture_report(args->report, args->cm_wgs, NULL, key_buffer, value_buffer);
     }
 
     /* Write capture stats report */
     if (args->do_capture) {
-        capture_report(args->report, args->cm, args->ti);
+        capture_report(args->report, args->cm, args->ti, key_buffer, value_buffer);
     }
 
     report_print(args->output_fp, args->report);
+
+    free(key_buffer);
+    free(value_buffer);
 }
 
 #ifdef USE_PTHREAD
