@@ -19,3 +19,8 @@ AlignStats v0.3 (23 May 2018)
 - Report is now in JSON format.
 - Added standard deviation metrics for aligned read length, insert size, and
 coverage.
+
+AlignStats v0.4 (14 Aug 2018)
+
+- Fix off-by-one when measuring lengths of target regions.
+- Add coverage report metrics for 15X coverage.
