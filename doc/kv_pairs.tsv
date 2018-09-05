@@ -1,9 +1,9 @@
 Key	Type	Description
-TotalReads	Integer	Total number of reads from input
-UnfilteredReads	Integer	Total number of unfiltered reads
-UnfilteredReadsPct	Float	Number of unfiltered reads as a percentage of TotalReads
-FilteredReads	Integer	Total number of filtered reads
-FilteredReadsPct	Float	Number of filtered reads as a percentage of TotalReads
+TotalRecords	Integer	Total number of reads from input
+UnfilteredRecords	Integer	Total number of unfiltered reads
+UnfilteredRecordsPct	Float	Number of unfiltered reads as a percentage of TotalReads
+FilteredRecords	Integer	Total number of filtered reads
+FilteredRecordsPct	Float	Number of filtered reads as a percentage of TotalReads
 YieldReads	Integer	Total number of unfiltered reads processed
 YieldBases	Integer	Total number of unfiltered bases processed
 UnmappedReads	Integer	Number of unmapped reads
@@ -119,7 +119,7 @@ R1UnpairedReads	Integer	Number of unpaired reads for R1
 R1UnpairedReadsPct	Float	Number of unpaired reads as percentage of TotalPairs for R1
 R2UnpairedReads	Integer	Number of unpaired reads for R2
 R2UnpairedReadsPct	Float	Number of unpaired reads as percentage of TotalPairs for R2
-ChimericRate	Float	Reads in improper pair as percentage of MappedReads (samtools view -F 1806 reads / samtools view -F 1804)
+ChimericReadPairPct	Float	Reads in improper pair as percentage of MappedReads (samtools view -F 1806 reads / samtools view -F 1804)
 InsertSizeMean	Float	Mean observed insert size (read must be in proper pair)
 InsertSizeMedian	Integer	Median observed insert size (read must be in proper pair)
 InsertSizeMode	Integer	Mode observed insert size (read must be in proper pair)

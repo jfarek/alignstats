@@ -10,11 +10,11 @@ table, th, td {
 
 <table>
 <tr><th>Key</th><th>Type</th><th>Description</th></tr>
-<tr><td>TotalReads</td><td>Integer</td><td>Total number of reads from input</td></tr>
-<tr><td>UnfilteredReads</td><td>Integer</td><td>Total number of unfiltered reads</td></tr>
-<tr><td>UnfilteredReadsPct</td><td>Float</td><td>Number of unfiltered reads as a percentage of TotalReads</td></tr>
-<tr><td>FilteredReads</td><td>Integer</td><td>Total number of filtered reads</td></tr>
-<tr><td>FilteredReadsPct</td><td>Float</td><td>Number of filtered reads as a percentage of TotalReads</td></tr>
+<tr><td>TotalRecords</td><td>Integer</td><td>Total number of reads from input</td></tr>
+<tr><td>UnfilteredRecords</td><td>Integer</td><td>Total number of unfiltered reads</td></tr>
+<tr><td>UnfilteredRecordsPct</td><td>Float</td><td>Number of unfiltered reads as a percentage of TotalReads</td></tr>
+<tr><td>FilteredRecords</td><td>Integer</td><td>Total number of filtered reads</td></tr>
+<tr><td>FilteredRecordsPct</td><td>Float</td><td>Number of filtered reads as a percentage of TotalReads</td></tr>
 <tr><td>YieldReads</td><td>Integer</td><td>Total number of unfiltered reads processed</td></tr>
 <tr><td>YieldBases</td><td>Integer</td><td>Total number of unfiltered bases processed</td></tr>
 <tr><td>UnmappedReads</td><td>Integer</td><td>Number of unmapped reads</td></tr>
@@ -130,7 +130,7 @@ table, th, td {
 <tr><td>R1UnpairedReadsPct</td><td>Float</td><td>Number of unpaired reads as percentage of TotalPairs for R1</td></tr>
 <tr><td>R2UnpairedReads</td><td>Integer</td><td>Number of unpaired reads for R2</td></tr>
 <tr><td>R2UnpairedReadsPct</td><td>Float</td><td>Number of unpaired reads as percentage of TotalPairs for R2</td></tr>
-<tr><td>ChimericRate</td><td>Float</td><td>Reads in improper pair as percentage of MappedReads (samtools view -F 1806 reads / samtools view -F 1804)</td></tr>
+<tr><td>ChimericReadPairPct</td><td>Float</td><td>Reads in improper pair as percentage of MappedReads (samtools view -F 1806 reads / samtools view -F 1804)</td></tr>
 <tr><td>InsertSizeMean</td><td>Float</td><td>Mean observed insert size (read must be in proper pair)</td></tr>
 <tr><td>InsertSizeMedian</td><td>Integer</td><td>Median observed insert size (read must be in proper pair)</td></tr>
 <tr><td>InsertSizeMode</td><td>Integer</td><td>Mode observed insert size (read must be in proper pair)</td></tr>

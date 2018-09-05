@@ -24,3 +24,8 @@ AlignStats v0.4 (14 Aug 2018)
 
 - Fix off-by-one when measuring lengths of target regions.
 - Add coverage report metrics for 15X coverage.
+
+AlignStats v0.5 (5 Sep 2018)
+
+- Adjust some metric key names to improve clarity.
+- Revert percentages to values from 0 to 100.

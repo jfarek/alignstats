@@ -113,7 +113,7 @@ void pair_stats_report(report_t *report, pair_stats_metrics_t *psm, char *key_bu
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->read2_mapped, psm->pairs_total);
     report_add_key_value(report, key_buffer, value_buffer);
 
-    copy_to_buffer(key_buffer, "ChimericRate", REPORT_BUFFER_SIZE);
+    copy_to_buffer(key_buffer, "ChimericReadPairPct", REPORT_BUFFER_SIZE);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, psm->cr_improper_pair, psm->cr_mapped);
     report_add_key_value(report, key_buffer, value_buffer);
 }
