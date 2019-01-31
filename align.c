@@ -60,120 +60,120 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
         /* Aligned reads: filter out reads with filtered flags */
         if (!(rec->core.flag & am->filter)) {
             ++am->r_aligned;
-        }
 
-        /* Duplicate reads */
-        if (rec->core.flag & BAM_FDUP) {
-            ++am->r_dup;
-            am->b_dup += rec->core.l_qseq;
-        }
+            /* Duplicate reads */
+            if (rec->core.flag & BAM_FDUP) {
+                ++am->r_dup;
+                am->b_dup += rec->core.l_qseq;
+            }
 
-        if (process_cigar) {
-            qual = bam_get_qual(rec);
-            cigar = bam_get_cigar(rec);
-            pos = 0;
-            num_m = num_i = num_d = num_s = num_eq = num_x = 0;
+            if (process_cigar) {
+                qual = bam_get_qual(rec);
+                cigar = bam_get_cigar(rec);
+                pos = 0;
+                num_m = num_i = num_d = num_s = num_eq = num_x = 0;
 
-            /* Count M, I, D, S in CIGAR string (processCIGAR) */
+                /* Count M, I, D, S in CIGAR string (processCIGAR) */
 
-            /* for each CIGAR operator */
-            for (uint32_t i = 0; i < rec->core.n_cigar; ++i) {
-                op = bam_cigar_op(cigar[i]);
-                oplen = bam_cigar_oplen(cigar[i]);
+                /* for each CIGAR operator */
+                for (uint32_t i = 0; i < rec->core.n_cigar; ++i) {
+                    op = bam_cigar_op(cigar[i]);
+                    oplen = bam_cigar_oplen(cigar[i]);
 
-                /* Sum the length of these operators */
-                switch (op) {
-                case BAM_CMATCH:
-                    num_m += oplen;
-                    break;
-                case BAM_CEQUAL:
-                    num_eq += oplen;
-                    break;
-                case BAM_CDIFF:
-                    num_x += oplen;
-                    break;
-                case BAM_CINS:
-                    num_i += oplen;
-                    break;
-                case BAM_CSOFT_CLIP:
-                    num_s += oplen;
-                    pos += (int32_t)oplen;
-                    break;
-                case BAM_CDEL:
-                    num_d += oplen;
-                    break;
-                default:
-                    break;
+                    /* Sum the length of these operators */
+                    switch (op) {
+                    case BAM_CMATCH:
+                        num_m += oplen;
+                        break;
+                    case BAM_CEQUAL:
+                        num_eq += oplen;
+                        break;
+                    case BAM_CDIFF:
+                        num_x += oplen;
+                        break;
+                    case BAM_CINS:
+                        num_i += oplen;
+                        break;
+                    case BAM_CSOFT_CLIP:
+                        num_s += oplen;
+                        pos += (int32_t)oplen;
+                        break;
+                    case BAM_CDEL:
+                        num_d += oplen;
+                        break;
+                    default:
+                        break;
+                    }
+
+                    switch (op) {
+                    case BAM_CMATCH:
+                    case BAM_CEQUAL:
+                    case BAM_CDIFF:
+                    case BAM_CINS:
+                        end_pos = pos + (int32_t)oplen;
+
+                        /* for each aligned base check qual and increment pos */
+                        while (pos < end_pos) {
+                            if (qual[pos++] >= 20) {
+                                ++am->b_q20;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                    }
                 }
 
-                switch (op) {
-                case BAM_CMATCH:
-                case BAM_CEQUAL:
-                case BAM_CDIFF:
-                case BAM_CINS:
-                    end_pos = pos + (int32_t)oplen;
-
-                    /* for each aligned base check qual and increment pos */
-                    while (pos < end_pos) {
-                        if (qual[pos++] >= 20) {
-                            ++am->b_q20;
+                /*
+                 * Count mismatches from NM or MD tag if present.
+                 * if num_mismatches was calculated from an MD tag, subtract dels
+                 * otherwise num_mismatches becomes num_x
+                 */
+                if ((nm_tag = bam_aux_get(rec, "NM")) != NULL) {
+                    num_mismatches = bam_aux2i(nm_tag);
+                    num_mismatches -= num_d;
+                    num_matches = num_m - num_mismatches;
+                }
+                /*
+                else if ((md_tag = bam_aux_get(rec, "MD")) != NULL) {
+                    num_mismatches = 0;
+                    for (char *md_str = bam_aux2Z(md_tag); *md_str != '\0'; ++md_str) {
+                        if (isalpha(*md_str)) {
+                            ++num_mismatches;
                         }
                     }
-                    break;
-                default:
-                    break;
+                    num_mismatches -= num_d;
+                    num_matches = num_m - num_mismatches;
                 }
-            }
-
-            /*
-             * Count mismatches from NM or MD tag if present.
-             * if num_mismatches was calculated from an MD tag, subtract dels
-             * otherwise num_mismatches becomes num_x
-             */
-            if ((nm_tag = bam_aux_get(rec, "NM")) != NULL) {
-                num_mismatches = bam_aux2i(nm_tag);
-                num_mismatches -= num_d;
-                num_matches = num_m - num_mismatches;
-            }
-            /*
-            else if ((md_tag = bam_aux_get(rec, "MD")) != NULL) {
-                num_mismatches = 0;
-                for (char *md_str = bam_aux2Z(md_tag); *md_str != '\0'; ++md_str) {
-                    if (isalpha(*md_str)) {
-                        ++num_mismatches;
-                    }
+                */
+                else {
+                    num_mismatches = num_x;
+                    num_matches = (num_m > num_eq) ? num_m - num_mismatches : num_eq;
                 }
-                num_mismatches -= num_d;
-                num_matches = num_m - num_mismatches;
-            }
-            */
-            else {
-                num_mismatches = num_x;
-                num_matches = (num_m > num_eq) ? num_m - num_mismatches : num_eq;
-            }
 
-            /*
-             * Set alignment metrics
-             * b_matched + b_mismatched == num_m
-             * num_m + b_inserted == b_aligned
-             * b_aligned + b_soft_clipped == b_mapped == l_qseq
-             */
-            num_aligned = rec->core.l_qseq;
-            if (num_s > 0) {
-                ++am->r_soft_clipped;
-                am->b_soft_clipped += num_s;
-                num_aligned -= num_s;
-            }
-            am->b_aligned += num_aligned;
-            am->b_matched += num_matches;
-            am->b_mismatched += num_mismatches;
-            am->b_inserted += num_i;
-            am->b_deleted += num_d;
+                /*
+                 * Set alignment metrics
+                 * b_matched + b_mismatched == num_m
+                 * num_m + b_inserted == b_aligned
+                 * b_aligned + b_soft_clipped == b_mapped == l_qseq
+                 */
+                num_aligned = rec->core.l_qseq;
+                if (num_s > 0) {
+                    ++am->r_soft_clipped;
+                    am->b_soft_clipped += num_s;
+                    num_aligned -= num_s;
+                }
+                am->b_aligned += num_aligned;
+                am->b_matched += num_matches;
+                am->b_mismatched += num_mismatches;
+                am->b_inserted += num_i;
+                am->b_deleted += num_d;
 
-            /* Exact matches: no mismatches, insertions, or deletions */
-            if (num_mismatches + num_d + num_i == 0) {
-                ++am->r_exact_match;
-                am->b_exact_match += num_aligned;
+                /* Exact matches: no mismatches, insertions, or deletions */
+                if (num_mismatches + num_d + num_i == 0) {
+                    ++am->r_exact_match;
+                    am->b_exact_match += num_aligned;
+                }
             }
         }
     }
