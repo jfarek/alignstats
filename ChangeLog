@@ -29,3 +29,8 @@ AlignStats v0.5 (5 Sep 2018)
 
 - Adjust some metric key names to improve clarity.
 - Revert percentages to values from 0 to 100.
+
+AlignStats v0.6 (31 Jan 2019)
+
+- Duplicate and CIGAR-based metrics now properly calculated as subsets of
+aligned reads and bases.
