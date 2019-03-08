@@ -59,7 +59,7 @@ capture_metrics_t *capture_metrics_init()
  */
 void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci, bed_t *ti)
 {
-    uint64_t k = 0, sum = 0;
+    uint64_t k = 0, median_sum = 0, sum = 0;
     uint64_t mid = (ti == NULL ? cm->b_total : cm->b_targeted) / 2;
     bool median_set = false;
 
@@ -67,11 +67,12 @@ void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci, bed_t 
     for (size_t i = 0; i < ci->cov_histo_len; ++i) {
         if (ci->cov_histo[i] > 0) {
             k += ci->cov_histo[i];
-            sum += i * ci->cov_histo[i];
-            if (!median_set && sum >= mid) {
+            median_sum += ci->cov_histo[i];
+            if (!median_set && median_sum >= mid) {
                 cm->c_median = i;
                 median_set = true;
             }
+            sum += i * ci->cov_histo[i];
         }
     }
 
