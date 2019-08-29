@@ -527,15 +527,14 @@ void _capture_process_record2(bam1_t *rec, capture_metrics_t *cm,
 void capture_process_record(bam1_t *rec, uint32_t *coverage,
                             capture_metrics_t *cm_wgs,
                             capture_metrics_t *cm_cap, int32_t chrom_len,
-                            bool remove_dups)
+                            bool remove_dups, bool remove_overlaps)
 {
     bool in_target, in_buffer;
     uint8_t *qual, *bqual;
-    int32_t pos, start, start_pos, end_pos, ref_pos;
+    int32_t pos, start, start_pos, end_pos, ref_pos, r_end_pos, overlap_end;
     uint32_t target, oplen, *cigar;
     const uint16_t FILTER = BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL;
     const uint32_t COV_MAX = (UINT32_MAX - 1) >> 2;
-
 
     if (cm_wgs != NULL) {
         ++cm_wgs->r_total;
@@ -571,6 +570,19 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
     start = rec->core.pos;
     cigar = bam_get_cigar(rec);
     bqual = bam_get_qual(rec);
+    r_end_pos = bam_endpos(rec);
+
+    if (remove_overlaps &&
+        !(rec->core.flag & BAM_FMUNMAP) && /* mate not unmapped */
+        rec->core.tid == rec->core.mtid && /* same chromosome */
+        rec->core.pos < rec->core.mpos &&  /* first read in coord-sort order */
+        rec->core.mpos < r_end_pos)        /* mate overlaps seq before ref-aligned end pos */
+    {
+        overlap_end = rec->core.mpos;
+        log_info("overlap: (%d, %d), %d", rec->core.mpos, r_end_pos, r_end_pos - rec->core.mpos);
+    } else {
+        overlap_end = r_end_pos;
+    }
 
     /* for each CIGAR op */
     for (uint32_t i = 0; i < rec->core.n_cigar; ++i) {
@@ -602,7 +614,9 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                 qual = bqual + ref_pos;
                 while (pos <= end_pos) {
                     if (get_coverage(coverage[pos]) < COV_MAX) {
-                        ++coverage[pos];
+                        if (pos < overlap_end) {
+                            ++coverage[pos];
+                        }
                     } else {
                         /* Y'know just in case */
                         log_warning("Coverage of greater than %u detected. "

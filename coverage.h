@@ -102,7 +102,7 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                             /*const uint8_t *target_cov,*/
                             capture_metrics_t *cm_wgs,
                             capture_metrics_t *cm_cap, int32_t chrom_len,
-                            bool remove_dups);
+                            bool remove_dups, bool remove_overlaps);
 void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti, char *key_buffer, char *value_buffer);
 
 #endif /* _COVERAGE_H */

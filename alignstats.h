@@ -51,6 +51,7 @@ struct args {
     bool do_cov_mask;
     bool do_pthread;
     bool remove_dups;
+    bool remove_overlaps;
     bool process_unmapped;
     bool process_unmapped_done;
 
