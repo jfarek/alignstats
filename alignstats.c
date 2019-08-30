@@ -63,11 +63,13 @@ void usage()
     fprintf(stderr, "    -q INT      Only process records with minimum read quality of INT.\n");
     fprintf(stderr, "    -f INT      Only process records with all bits in INT set in FLAG.\n");
     fprintf(stderr, "    -F INT      Only process records with none of bits in INT set in FLAG.\n");
+    fprintf(stderr, "    -b INT      Filter bases with base quality below INT from coverage\n");
+    fprintf(stderr, "                statistics.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Reporting options:\n");
     fprintf(stderr, "    -D          Disable excluding duplicate reads from coverage statistics.\n");
     fprintf(stderr, "    -O          Disable excluding overlapping bases in paired-end reads from\n");
-    fprintf(stderr, "                first read in coordinate-sorted order.\n");
+    fprintf(stderr, "                first read in coordinate-sorted order from coverage statistics.\n");
     fprintf(stderr, "    -U          Disable processing unplaced unmapped reads (CHROM \"*\") when\n");
     fprintf(stderr, "                using the -r option.\n");
     fprintf(stderr, "    -A          Disable reporting alignment statistics.\n");
@@ -92,7 +94,7 @@ int main(int argc, char **argv)
     char *cov_mask_fn, *reference_fn, *ref_buff, *end;
     char mode[MODE_LEN], fmt[FMT_LEN];
     int c, exit_val;
-    uint8_t min_qual, num_hts_threads;
+    uint8_t num_hts_threads;
     uint16_t filter_incl, filter_excl;
     uint32_t max_chrom_len, min_buffer_reads, max_reads_tmp;
     size_t fn_len, rec_buff_size;
@@ -143,6 +145,8 @@ int main(int argc, char **argv)
 
     args->prev_chrom_name = NULL;
     args->curr_chrom_name = NULL;
+    args->min_qual = 0;
+    args->min_base_qual = 0;
     args->prev_chrom_idx = -999;
     args->prev_mapped_chrom_idx = -999;
     args->curr_chrom_idx = -999;
@@ -190,13 +194,12 @@ int main(int argc, char **argv)
         goto end;
     }
 
-    min_qual = 0;
     num_hts_threads = 1;
     filter_incl = 0;
     filter_excl = 0;
 
     /* Read parameters */
-    while ((c = getopt(argc, argv, "ACDF:OP:T:UWf:hi:j:m:n:o:pq:r:t:v")) != -1) {
+    while ((c = getopt(argc, argv, "ACDF:OP:T:UWb:f:hi:j:m:n:o:pq:r:t:v")) != -1) {
         switch (c) {
         case 'A': /* Turn off alignment stats */
             args->do_alignment = false;
@@ -227,6 +230,9 @@ int main(int argc, char **argv)
             break;
         case 'W': /* Turn off whole genome stats */
             args->do_wgs = false;
+            break;
+        case 'b': /* Minimum coverage base quality */
+            args->min_base_qual = (uint8_t)strtol(optarg, &end, 10);
             break;
         case 'f': /* Filter include */
             if ((filter_incl = (uint16_t)strtol(optarg, &end, 10)) > FLAG_MAX) {
@@ -263,7 +269,7 @@ int main(int argc, char **argv)
             args->do_pthread = true;
             break;
         case 'q': /* Minimum read quality */
-            min_qual = (uint8_t)strtol(optarg, &end, 10);
+            args->min_qual = (uint8_t)strtol(optarg, &end, 10);
             break;
         case 'r': /* Regions */
             regions_fn = optarg;
@@ -490,7 +496,7 @@ int main(int argc, char **argv)
 
     /* Prepare all the data structures */
 
-    args->fc = filter_counter_init(min_qual, filter_incl, filter_excl);
+    args->fc = filter_counter_init(args->min_qual, filter_incl, filter_excl);
 
     /* Create metrics calculators */
     if (args->do_alignment) {

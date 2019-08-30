@@ -527,12 +527,14 @@ void _capture_process_record2(bam1_t *rec, capture_metrics_t *cm,
 void capture_process_record(bam1_t *rec, uint32_t *coverage,
                             capture_metrics_t *cm_wgs,
                             capture_metrics_t *cm_cap, int32_t chrom_len,
-                            bool remove_dups, bool remove_overlaps)
+                            bool remove_dups, bool remove_overlaps,
+                            uint8_t min_base_qual)
 {
     bool in_target, in_buffer;
     uint8_t *qual, *bqual;
     int32_t pos, start, start_pos, end_pos, ref_pos, r_end_pos, overlap_end;
     uint32_t target, oplen, *cigar;
+    uint64_t b_filt_overlap, b_filt_basequal;
     const uint16_t FILTER = BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL;
     const uint32_t COV_MAX = (UINT32_MAX - 1) >> 2;
 
@@ -571,15 +573,16 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
     cigar = bam_get_cigar(rec);
     bqual = bam_get_qual(rec);
     r_end_pos = bam_endpos(rec);
+    b_filt_overlap = 0;
+    b_filt_basequal = 0;
 
     if (remove_overlaps &&
-        !(rec->core.flag & BAM_FMUNMAP) && /* mate not unmapped */
+        !(rec->core.flag & BAM_FMUNMAP) && /* mate mapped */
         rec->core.tid == rec->core.mtid && /* same chromosome */
         rec->core.pos < rec->core.mpos &&  /* first read in coord-sort order */
         rec->core.mpos < r_end_pos)        /* mate overlaps seq before ref-aligned end pos */
     {
         overlap_end = rec->core.mpos;
-        log_info("overlap: (%d, %d), %d", rec->core.mpos, r_end_pos, r_end_pos - rec->core.mpos);
     } else {
         overlap_end = r_end_pos;
     }
@@ -614,7 +617,11 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                 qual = bqual + ref_pos;
                 while (pos <= end_pos) {
                     if (get_coverage(coverage[pos]) < COV_MAX) {
-                        if (pos < overlap_end) {
+                        if (pos >= overlap_end) {
+                            ++b_filt_overlap;
+                        } else if (*qual < min_base_qual) {
+                            ++b_filt_basequal;
+                        } else {
                             ++coverage[pos];
                         }
                     } else {
@@ -650,9 +657,13 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
     }
 
     if (cm_wgs != NULL) {
+        cm_wgs->b_filt_overlap += b_filt_overlap;
+        cm_wgs->b_filt_basequal += b_filt_basequal;
         _capture_process_record2(rec, cm_wgs, TARGET_OUT);
     }
     if (cm_cap != NULL) {
+        cm_cap->b_filt_overlap += b_filt_overlap;
+        cm_cap->b_filt_basequal += b_filt_basequal;
         _capture_process_record2(rec, cm_cap,
             in_target ? TARGET_IN : in_buffer ? TARGET_BUFFER : TARGET_OUT);
     }
@@ -793,6 +804,14 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti, char *ke
 
     copy_to_buffer(key_start, "CoverageBases1000Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_1000_plus_hits, denominator);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "FilteredOverlapBases", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_filt_overlap);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "FilteredLowBaseQualityBases", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_filt_basequal);
     report_add_key_value(report, key_buffer, value_buffer);
 
     /* ti != NULL? capture stats: wgs */

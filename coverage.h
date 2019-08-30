@@ -58,6 +58,8 @@ struct capture_metrics {
     uint64_t b_100_plus_hits;  /* Target bases with >= 100X coverage */
     uint64_t b_500_plus_hits;  /* Target bases with >= 500X coverage */
     uint64_t b_1000_plus_hits; /* Target bases with >= 1000X coverage */
+    uint64_t b_filt_overlap;   /* Bases filtered by read-pair overlap */
+    uint64_t b_filt_basequal;  /* Bases filtered by minimum base quality */
 
     /* Target info */
     uint64_t t_total;       /* Number of targets from target file */
@@ -102,7 +104,8 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                             /*const uint8_t *target_cov,*/
                             capture_metrics_t *cm_wgs,
                             capture_metrics_t *cm_cap, int32_t chrom_len,
-                            bool remove_dups, bool remove_overlaps);
+                            bool remove_dups, bool remove_overlaps,
+                            uint8_t min_base_qual);
 void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti, char *key_buffer, char *value_buffer);
 
 #endif /* _COVERAGE_H */

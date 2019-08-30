@@ -58,6 +58,8 @@ struct args {
     /* Read processing */
     char *prev_chrom_name;
     char *curr_chrom_name;
+    uint8_t min_qual;
+    uint8_t min_base_qual;
     int32_t prev_chrom_idx;
     int32_t prev_mapped_chrom_idx;
     int32_t curr_chrom_idx;
