@@ -6,8 +6,8 @@
 #include <stdlib.h>
 
 /* Both key and value data types should be a base numerical type. */
-typedef int32_t tree_node_key_t;
-typedef int32_t tree_node_value_t;
+typedef uint64_t tree_node_key_t;
+typedef uint64_t tree_node_value_t;
 
 /* Tree map node structure */
 struct tree_node {
