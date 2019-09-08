@@ -1,9 +1,41 @@
 ChangeLog
 
 
-AlignStats v0.1 (13 Jun 2017)
+AlignStats v0.8 (8 Sep 2019)
 
-First public version.
+- Default behavior now filters read pair base overlap from counting towards
+coverage statistics.
+- Option `-O` for disabling filtering of read pair base overlap from counting
+towards coverage statistics.
+- Option `-b` for setting minimum base quality to count towards coverage
+statistics.
+- Make tree node key and value types uint64_t to prevent integer overflow in
+large samples.
+
+AlignStats v0.7 (8 Mar 2019)
+
+- Fix median coverage calculation.
+
+AlignStats v0.6 (31 Jan 2019)
+
+- Duplicate and CIGAR-based metrics now properly calculated as subsets of
+aligned reads and bases.
+
+AlignStats v0.5 (5 Sep 2018)
+
+- Adjust some metric key names to improve clarity.
+- Revert percentages to values from 0 to 100.
+
+AlignStats v0.4 (14 Aug 2018)
+
+- Fix off-by-one when measuring lengths of target regions.
+- Add coverage report metrics for 15X coverage.
+
+AlignStats v0.3 (23 May 2018)
+
+- Report is now in JSON format.
+- Added standard deviation metrics for aligned read length, insert size, and
+coverage.
 
 AlignStats v0.2 (15 Dec 2017)
 
@@ -14,27 +46,6 @@ AlignStats v0.2 (15 Dec 2017)
 - NM tag is now used to count mismatches instead of MD tag.
 - Fix how bases on target or buffer are counted.
 
-AlignStats v0.3 (23 May 2018)
+AlignStats v0.1 (13 Jun 2017)
 
-- Report is now in JSON format.
-- Added standard deviation metrics for aligned read length, insert size, and
-coverage.
-
-AlignStats v0.4 (14 Aug 2018)
-
-- Fix off-by-one when measuring lengths of target regions.
-- Add coverage report metrics for 15X coverage.
-
-AlignStats v0.5 (5 Sep 2018)
-
-- Adjust some metric key names to improve clarity.
-- Revert percentages to values from 0 to 100.
-
-AlignStats v0.6 (31 Jan 2019)
-
-- Duplicate and CIGAR-based metrics now properly calculated as subsets of
-aligned reads and bases.
-
-AlignStats v0.7 (8 Mar 2019)
-
-- Fix median coverage calculation.
+First public version.

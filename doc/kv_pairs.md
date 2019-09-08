@@ -205,4 +205,6 @@ table, th, td {
 <tr><td>CapBasesOnBuffer</td><td>Integer</td><td>Number of bases within target buffer regions but outside of target regions</td></tr>
 <tr><td>CapReadsOnTargetOrBuffer</td><td>Integer</td><td>Number of reads captured by either target regions or target buffer regions</td></tr>
 <tr><td>CapReadsOnTargetOrBufferPct</td><td>Float</td><td>Reads captured by either target regions or target buffer regions as percentage of aligned reads</td></tr>
+<tr><td>FilteredOverlapBases</td><td>Integer</td><td>Total per-read bases filtered from coverage statistics as overlapping with bases in the mate pair read</td></tr>
+<tr><td>FilteredLowBaseQualityBases</td><td>Integer</td><td>Total per-read bases filtered from coverage statistics as having a base quality below the minimum base quality</td></tr>
 </table>

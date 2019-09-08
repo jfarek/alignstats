@@ -30,10 +30,11 @@
  */
 
 void usage()
-{ fprintf(stderr, "Usage: alignstats [-i INPUT] [-j FORMAT] [-o OUTPUT]\n");
+{
+    fprintf(stderr, "Usage: alignstats [-i INPUT] [-j FORMAT] [-o OUTPUT]\n");
     fprintf(stderr, "                  [-h] [-v] [-n NUMREADS] [-p] [-P INT]\n");
     fprintf(stderr, "                  [-r REGIONS] [-t TARGET] [-m COVMASK] [-T REFFASTA]\n");
-    fprintf(stderr, "                  [-q INT] [-f INT] [-F INT]\n");
+    fprintf(stderr, "                  [-q INT] [-f INT] [-F INT] [-b INT]\n");
     fprintf(stderr, "                  [-D] [-O] [-U] [-A] [-C] [-W]\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Runtime options:\n");
@@ -60,7 +61,7 @@ void usage()
     fprintf(stderr, "    -T REFFASTA Indexed FASTA reference file for CRAM input alignment.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Processing options:\n");
-    fprintf(stderr, "    -q INT      Only process records with minimum read quality of INT.\n");
+    fprintf(stderr, "    -q INT      Only process records with minimum mapping quality of INT.\n");
     fprintf(stderr, "    -f INT      Only process records with all bits in INT set in FLAG.\n");
     fprintf(stderr, "    -F INT      Only process records with none of bits in INT set in FLAG.\n");
     fprintf(stderr, "    -b INT      Filter bases with base quality below INT from coverage\n");

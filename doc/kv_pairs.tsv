@@ -194,3 +194,5 @@ CapBasesOnTarget	Integer	Number of bases within target regions
 CapBasesOnBuffer	Integer	Number of bases within target buffer regions but outside of target regions
 CapReadsOnTargetOrBuffer	Integer	Number of reads captured by either target regions or target buffer regions
 CapReadsOnTargetOrBufferPct	Float	Reads captured by either target regions or target buffer regions as percentage of aligned reads
+FilteredOverlapBases	Integer	Total per-read bases filtered from coverage statistics as overlapping with bases in the mate pair read
+FilteredLowBaseQualityBases	Integer	Total per-read bases filtered from coverage statistics as having a base quality below the minimum base quality

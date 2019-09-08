@@ -25,7 +25,7 @@
 #include <semaphore.h>
 #endif
 
-#define ALIGNSTATS_VERSION "0.7"
+#define ALIGNSTATS_VERSION "0.8"
 #define RECORD_BUFFER_SIZE 0x4000
 #define RECORD_BUFFER_SECTIONS 0x10
 
