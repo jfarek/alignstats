@@ -2,6 +2,7 @@
 #include "err.h"
 #include "logging.h"
 #include "print.h"
+#include <ctype.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -40,6 +41,298 @@ void coverage_info_destroy(coverage_info_t *ci)
     }
 }
 
+/* Read pair overlapping pair structure */
+
+void overlap_buffer_init(capture_metrics_t *cm)
+{
+    int32_t initial_len = 32;
+
+    cm->overlap_buffer = calloc(initial_len, sizeof(overlap_pair_t));
+    die_on_alloc_fail(cm->overlap_buffer);
+    cm->overlap_buffer_len = initial_len;
+    cm->n_overlap_pairs = 0;
+}
+
+void overlap_buffer_add(capture_metrics_t *cm, int32_t start, int32_t end)
+{
+    /* if need to enlarge arr */
+    if (cm->n_overlap_pairs == cm->overlap_buffer_len) {
+        /* double size and realloc */
+        uint32_t new_size = 2 * cm->overlap_buffer_len;
+        overlap_pair_t *tmp_overlap_buffer = realloc(
+            cm->overlap_buffer,
+            new_size * sizeof(overlap_pair_t)
+        );
+
+        /* check realloc */
+        if (tmp_overlap_buffer != NULL) {
+            cm->overlap_buffer = tmp_overlap_buffer;
+            cm->overlap_buffer_len = new_size;
+        } else { /* kill program */
+            free(cm->overlap_buffer);
+            die_on_alloc_fail(tmp_overlap_buffer);
+            return;
+        }
+    }
+
+    /* set start and end of new pair */
+    overlap_pair_t *pair = cm->overlap_buffer + cm->n_overlap_pairs;
+    pair->start = start;
+    pair->end = end;
+    ++cm->n_overlap_pairs;
+}
+
+void overlap_buffer_clear(capture_metrics_t *cm)
+{
+    memset(cm->overlap_buffer, 0, cm->overlap_buffer_len * sizeof(overlap_pair_t));
+    cm->n_overlap_pairs = 0;
+}
+
+void advance_to_coverage_cigar(uint32_t **cigar_ptr, uint32_t **cigar_end_ptr, int32_t *rpos)
+{
+    uint8_t cigar_op;
+
+    while (*cigar_ptr != *cigar_end_ptr) {
+        cigar_op = bam_cigar_op(**cigar_ptr);
+
+        if (cigar_op == BAM_CMATCH ||
+            cigar_op == BAM_CDEL ||
+            cigar_op == BAM_CEQUAL ||
+            cigar_op == BAM_CDIFF)
+        {
+            break;
+        } else {
+            if (bam_cigar_type(cigar_op) & 0x02) {
+                *rpos += bam_cigar_oplen(**cigar_ptr);
+            }
+
+            ++(*cigar_ptr);
+        }
+    }
+}
+
+/* Generate overlap intervals for a read after loading mc_buffer with mc_buffer_load() */
+void overlap_buffer_generate(capture_metrics_t *cm, bam1_t *rec)
+{
+    /* ptrs to current cigar ops */
+    uint32_t *read_cigar, *mate_cigar;
+    uint32_t *read_cigar_end, *mate_cigar_end;
+    int32_t read_rpos, mate_rpos;
+
+    /* clear out overlap buffer */
+    overlap_buffer_clear(cm);
+
+    /* if both read and mate have non-zero # of cigar ops */
+    if (rec->core.n_cigar > 0 && cm->n_mc_cigar) {
+        /* read and mate pos */
+        read_rpos = rec->core.pos;
+        mate_rpos = rec->core.mpos;
+
+        /* set read and mate start and end */
+        read_cigar = bam_get_cigar(rec);
+        read_cigar_end = read_cigar + rec->core.n_cigar;
+        mate_cigar = cm->mc_buffer;
+        mate_cigar_end = cm->mc_buffer + cm->n_mc_cigar;
+
+        /* advance to first coverage cigar */
+        advance_to_coverage_cigar(&read_cigar, &read_cigar_end, &read_rpos);
+        advance_to_coverage_cigar(&mate_cigar, &mate_cigar_end, &mate_rpos);
+
+        int32_t read_endrpos, mate_endrpos;
+        int32_t overlap_start, overlap_end;
+
+        while (read_cigar != read_cigar_end && 
+               mate_cigar != mate_cigar_end)
+        {
+            read_endrpos = read_rpos + bam_cigar_oplen(*read_cigar);
+            mate_endrpos = mate_rpos + bam_cigar_oplen(*mate_cigar);
+
+            /* find overlap, add to overlap buffer, and advance cigars */
+            if (read_rpos < mate_rpos) {
+                /* record overlap */
+                if (mate_rpos < read_endrpos) {
+                    overlap_start = mate_rpos;
+                    overlap_end = (read_endrpos < mate_endrpos)? read_endrpos: mate_endrpos;
+                    overlap_buffer_add(cm, overlap_start, overlap_end);
+                }
+
+                /* advance read_cigar */
+                if (bam_cigar_type(*read_cigar) & 0x02) {
+                    read_rpos += bam_cigar_oplen(*read_cigar);
+                }
+                ++read_cigar;
+                advance_to_coverage_cigar(&read_cigar, &read_cigar_end, &read_rpos);
+            } else {
+                /* record overlap */
+                if (read_rpos < mate_endrpos) {
+                    overlap_start = read_rpos;
+                    overlap_end = (mate_endrpos < read_endrpos)? mate_endrpos: read_endrpos;
+                    overlap_buffer_add(cm, overlap_start, overlap_end);
+                }
+
+                /* advance mate_cigar */
+                if (bam_cigar_type(*mate_cigar) & 0x02) {
+                    mate_rpos += bam_cigar_oplen(*mate_cigar);
+                }
+                ++mate_cigar;
+                advance_to_coverage_cigar(&mate_cigar, &mate_cigar_end, &mate_rpos);
+            }
+        }
+    }
+}
+
+void overlap_buffer_destroy(capture_metrics_t *cm)
+{
+    if (cm != NULL) {
+        free(cm->overlap_buffer);
+        cm->overlap_buffer = NULL;
+        cm->overlap_buffer_len = 0;
+        cm->n_overlap_pairs = 0;
+    }
+}
+
+/* Mate CIGAR buffer structure */
+
+void mc_buffer_init(capture_metrics_t *cm)
+{
+    uint32_t initial_len = 32;
+
+    cm->mc_buffer = calloc(initial_len, sizeof(uint32_t));
+    die_on_alloc_fail(cm->mc_buffer);
+    cm->mc_buffer_len = initial_len;
+    cm->n_mc_cigar = 0;
+}
+
+void process_record_mc_overlap(capture_metrics_t *cm, bam1_t *rec)
+{
+    char *mc_str;
+    uint8_t *mc_aux;
+    uint32_t n_mc_cigar;
+
+    if (rec->core.flag & BAM_FREAD2) {
+        if ((mc_aux = bam_aux_get(rec, "MC")) != NULL) {
+            mc_str = bam_aux2Z(mc_aux);
+            n_mc_cigar = count_cigar_ops(mc_str);
+            cm->n_mc_cigar = mc_buffer_load(cm, n_mc_cigar, mc_str);
+
+            /* process overlap */
+            overlap_buffer_generate(cm, rec);
+
+            /*
+            if (cm->n_overlap_pairs > 0) {
+                overlap_pair_t *buffer, *buffer_end;
+                buffer = cm->overlap_buffer;
+
+                for (buffer = cm->overlap_buffer, buffer_end = cm->overlap_buffer + cm->n_overlap_pairs;
+                     buffer < buffer_end;
+                     ++buffer)
+                {
+                    printf("(%d, %d), %d\n", buffer->start, buffer->end, buffer->end - buffer->start);
+                }
+                putchar('\n');
+            }
+            */
+        }
+    }
+}
+
+uint32_t mc_buffer_load(capture_metrics_t *cm, uint32_t n_mc_cigar, char *mc_str)
+{
+    bool valid_cigar;
+    char *c, *end, cigar_opchr;
+    uint8_t cigar_op;
+    uint32_t cigar_len, cigar_idx;
+
+    cigar_idx = 0;
+
+    if (mc_str != NULL && n_mc_cigar > 0) {
+        /* if need to enlarge arr */
+        if (n_mc_cigar > cm->mc_buffer_len) {
+            /* size = n_mc_cigar + 4 and realloc */
+            uint32_t new_size = n_mc_cigar + 4;
+            uint32_t *tmp_mc_buffer = realloc(cm->mc_buffer, new_size * sizeof(uint32_t));
+
+            /* check realloc */
+            if (tmp_mc_buffer != NULL) {
+                cm->mc_buffer = tmp_mc_buffer;
+                cm->mc_buffer_len = new_size;
+            } else { /* kill program */
+                free(cm->mc_buffer);
+                die_on_alloc_fail(tmp_mc_buffer);
+                return cigar_idx;
+            }
+        }
+
+        c = mc_str;
+        cigar_len = 0;
+        cigar_opchr = '\0';
+        cigar_op = 0;
+        valid_cigar = true;
+
+        while (*c != '\0' && cigar_idx < n_mc_cigar) {
+            /* parse cigar len */
+            cigar_len = strtol(c, &end, 10);
+
+            /* parse cigar opchr */
+            if (end != c && *end != '\0') {
+                cigar_opchr = *end;
+                ++end;
+                c = end;
+            } else {
+                break;
+            }
+
+            /* cigar op from opchr */
+            switch (cigar_opchr) {
+            case 'M': cigar_op = 0x00; break;
+            case 'I': cigar_op = 0x01; break;
+            case 'D': cigar_op = 0x02; break;
+            case 'N': cigar_op = 0x03; break;
+            case 'S': cigar_op = 0x04; break;
+            case 'H': cigar_op = 0x05; break;
+            case 'P': cigar_op = 0x06; break;
+            case '=': cigar_op = 0x07; break;
+            case 'X': cigar_op = 0x08; break;
+            case 'B': cigar_op = 0x09; break;
+            default: valid_cigar = false; break;
+            }
+
+            if (valid_cigar) {
+                cm->mc_buffer[cigar_idx] = (cigar_len << 4) | cigar_op;
+                ++cigar_idx;
+            } else {
+                break;
+            }
+        }
+    }
+
+    return cigar_idx;
+}
+
+void mc_buffer_destroy(capture_metrics_t *cm)
+{
+    if (cm != NULL) {
+        free(cm->mc_buffer);
+        cm->mc_buffer = NULL;
+        cm->n_mc_cigar = 0;
+    }
+}
+
+uint32_t count_cigar_ops(char *cigar_str)
+{
+    char *c = cigar_str;
+    uint32_t count = 0;
+
+    while (*c != '\0') {
+        if (isalpha(*c)) {
+            ++count;
+        }
+        ++c;
+    }
+
+    return count;
+}
+
 /* Capture metrics structure */
 
 /**
@@ -49,6 +342,9 @@ capture_metrics_t *capture_metrics_init()
 {
     capture_metrics_t *cm = calloc(1, sizeof(capture_metrics_t));
     die_on_alloc_fail(cm);
+
+    overlap_buffer_init(cm);
+    mc_buffer_init(cm);
 
     return cm;
 }
@@ -90,6 +386,8 @@ void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci, bed_t 
  */
 void capture_metrics_destroy(capture_metrics_t *cm)
 {
+    mc_buffer_destroy(cm);
+    overlap_buffer_destroy(cm);
     free(cm);
 }
 
@@ -560,6 +858,13 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
     /* remove duplicate reads */
     if (remove_dups && (rec->core.flag & BAM_FDUP)) {
         return;
+    }
+
+    if (cm_wgs != NULL) {
+        process_record_mc_overlap(cm_wgs, rec);
+    }
+    if (cm_cap != NULL) {
+        process_record_mc_overlap(cm_cap, rec);
     }
 
     /*

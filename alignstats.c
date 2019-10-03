@@ -192,7 +192,7 @@ int main(int argc, char **argv)
         header();
         usage();
         exit_val = EXIT_FAILURE;
-        goto end;
+        goto end_usage;
     }
 
     num_hts_threads = 1;
@@ -245,7 +245,7 @@ int main(int argc, char **argv)
             header();
             usage();
             exit_val = EXIT_SUCCESS;
-            goto end;
+            goto end_usage;
             break;
         case 'i': /* Input filename */
             args->input_fn = optarg;
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
             header();
             usage();
             exit_val = EXIT_FAILURE;
-            goto end;
+            goto end_usage;
             break;
         }
     }
@@ -750,6 +750,7 @@ end:
         log_info("Finished successfully.");
     }
 
+end_usage:
     free(args);
 
     return exit_val;
