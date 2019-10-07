@@ -43,52 +43,54 @@ void coverage_info_destroy(coverage_info_t *ci)
 
 /* Read pair overlapping pair structure */
 
-void overlap_buffer_init(capture_metrics_t *cm)
+overlap_handler_t *overlap_handler_init()
 {
-    int32_t initial_len = 32;
+    overlap_handler_t *olh = calloc(1, sizeof(overlap_handler_t));
+    die_on_alloc_fail(olh);
 
-    cm->overlap_buffer = calloc(initial_len, sizeof(overlap_pair_t));
-    die_on_alloc_fail(cm->overlap_buffer);
-    cm->overlap_buffer_len = initial_len;
-    cm->n_overlap_pairs = 0;
+    overlap_buffer_init(olh);
+    mc_buffer_init(olh);
+
+    return olh;
 }
 
-void overlap_buffer_add(capture_metrics_t *cm, int32_t start, int32_t end)
+void overlap_handler_add(overlap_handler_t *olh, int32_t start, int32_t end)
 {
     /* if need to enlarge arr */
-    if (cm->n_overlap_pairs == cm->overlap_buffer_len) {
+    if (olh->n_overlap_pairs == olh->overlap_buffer_len) {
         /* double size and realloc */
-        uint32_t new_size = 2 * cm->overlap_buffer_len;
+        uint32_t new_size = 2 * olh->overlap_buffer_len;
         overlap_pair_t *tmp_overlap_buffer = realloc(
-            cm->overlap_buffer,
+            olh->overlap_buffer,
             new_size * sizeof(overlap_pair_t)
         );
 
         /* check realloc */
         if (tmp_overlap_buffer != NULL) {
-            cm->overlap_buffer = tmp_overlap_buffer;
-            cm->overlap_buffer_len = new_size;
-        } else { /* kill program */
-            free(cm->overlap_buffer);
+            olh->overlap_buffer = tmp_overlap_buffer;
+            olh->overlap_buffer_len = new_size;
+        } else {
+            free(olh->overlap_buffer);
             die_on_alloc_fail(tmp_overlap_buffer);
+
             return;
         }
     }
 
     /* set start and end of new pair */
-    overlap_pair_t *pair = cm->overlap_buffer + cm->n_overlap_pairs;
+    overlap_pair_t *pair = olh->overlap_buffer + olh->n_overlap_pairs;
     pair->start = start;
     pair->end = end;
-    ++cm->n_overlap_pairs;
+    ++olh->n_overlap_pairs;
 }
 
-void overlap_buffer_clear(capture_metrics_t *cm)
+void overlap_handler_clear(overlap_handler_t *olh)
 {
-    memset(cm->overlap_buffer, 0, cm->overlap_buffer_len * sizeof(overlap_pair_t));
-    cm->n_overlap_pairs = 0;
+    memset(olh->overlap_buffer, 0, olh->overlap_buffer_len * sizeof(overlap_pair_t));
+    olh->n_overlap_pairs = 0;
 }
 
-void advance_to_coverage_cigar(uint32_t **cigar_ptr, uint32_t **cigar_end_ptr, int32_t *rpos)
+void _advance_to_coverage_cigar(uint32_t **cigar_ptr, uint32_t **cigar_end_ptr, int32_t *rpos)
 {
     uint8_t cigar_op;
 
@@ -96,7 +98,6 @@ void advance_to_coverage_cigar(uint32_t **cigar_ptr, uint32_t **cigar_end_ptr, i
         cigar_op = bam_cigar_op(**cigar_ptr);
 
         if (cigar_op == BAM_CMATCH ||
-            cigar_op == BAM_CDEL ||
             cigar_op == BAM_CEQUAL ||
             cigar_op == BAM_CDIFF)
         {
@@ -112,18 +113,17 @@ void advance_to_coverage_cigar(uint32_t **cigar_ptr, uint32_t **cigar_end_ptr, i
 }
 
 /* Generate overlap intervals for a read after loading mc_buffer with mc_buffer_load() */
-void overlap_buffer_generate(capture_metrics_t *cm, bam1_t *rec)
+void overlap_handler_generate(overlap_handler_t *olh, bam1_t *rec)
 {
     /* ptrs to current cigar ops */
-    uint32_t *read_cigar, *mate_cigar;
-    uint32_t *read_cigar_end, *mate_cigar_end;
+    uint32_t *read_cigar, *mate_cigar, *read_cigar_end, *mate_cigar_end;
     int32_t read_rpos, mate_rpos;
 
     /* clear out overlap buffer */
-    overlap_buffer_clear(cm);
+    overlap_handler_clear(olh);
 
     /* if both read and mate have non-zero # of cigar ops */
-    if (rec->core.n_cigar > 0 && cm->n_mc_cigar) {
+    if (rec->core.n_cigar > 0 && olh->n_mc_cigar) {
         /* read and mate pos */
         read_rpos = rec->core.pos;
         mate_rpos = rec->core.mpos;
@@ -131,15 +131,14 @@ void overlap_buffer_generate(capture_metrics_t *cm, bam1_t *rec)
         /* set read and mate start and end */
         read_cigar = bam_get_cigar(rec);
         read_cigar_end = read_cigar + rec->core.n_cigar;
-        mate_cigar = cm->mc_buffer;
-        mate_cigar_end = cm->mc_buffer + cm->n_mc_cigar;
+        mate_cigar = olh->mc_buffer;
+        mate_cigar_end = olh->mc_buffer + olh->n_mc_cigar;
 
         /* advance to first coverage cigar */
-        advance_to_coverage_cigar(&read_cigar, &read_cigar_end, &read_rpos);
-        advance_to_coverage_cigar(&mate_cigar, &mate_cigar_end, &mate_rpos);
+        _advance_to_coverage_cigar(&read_cigar, &read_cigar_end, &read_rpos);
+        _advance_to_coverage_cigar(&mate_cigar, &mate_cigar_end, &mate_rpos);
 
-        int32_t read_endrpos, mate_endrpos;
-        int32_t overlap_start, overlap_end;
+        int32_t read_endrpos, mate_endrpos, overlap_start, overlap_end;
 
         while (read_cigar != read_cigar_end && 
                mate_cigar != mate_cigar_end)
@@ -153,90 +152,79 @@ void overlap_buffer_generate(capture_metrics_t *cm, bam1_t *rec)
                 if (mate_rpos < read_endrpos) {
                     overlap_start = mate_rpos;
                     overlap_end = (read_endrpos < mate_endrpos)? read_endrpos: mate_endrpos;
-                    overlap_buffer_add(cm, overlap_start, overlap_end);
+                    overlap_handler_add(olh, overlap_start, overlap_end);
                 }
 
                 /* advance read_cigar */
                 if (bam_cigar_type(*read_cigar) & 0x02) {
                     read_rpos += bam_cigar_oplen(*read_cigar);
                 }
+
                 ++read_cigar;
-                advance_to_coverage_cigar(&read_cigar, &read_cigar_end, &read_rpos);
+                _advance_to_coverage_cigar(&read_cigar, &read_cigar_end, &read_rpos);
             } else {
                 /* record overlap */
                 if (read_rpos < mate_endrpos) {
                     overlap_start = read_rpos;
                     overlap_end = (mate_endrpos < read_endrpos)? mate_endrpos: read_endrpos;
-                    overlap_buffer_add(cm, overlap_start, overlap_end);
+                    overlap_handler_add(olh, overlap_start, overlap_end);
                 }
 
                 /* advance mate_cigar */
                 if (bam_cigar_type(*mate_cigar) & 0x02) {
                     mate_rpos += bam_cigar_oplen(*mate_cigar);
                 }
+
                 ++mate_cigar;
-                advance_to_coverage_cigar(&mate_cigar, &mate_cigar_end, &mate_rpos);
+                _advance_to_coverage_cigar(&mate_cigar, &mate_cigar_end, &mate_rpos);
             }
         }
     }
 }
 
-void overlap_buffer_destroy(capture_metrics_t *cm)
+void overlap_handler_destroy(overlap_handler_t *olh)
 {
-    if (cm != NULL) {
-        free(cm->overlap_buffer);
-        cm->overlap_buffer = NULL;
-        cm->overlap_buffer_len = 0;
-        cm->n_overlap_pairs = 0;
+    mc_buffer_destroy(olh);
+    overlap_buffer_destroy(olh);
+    free(olh);
+}
+
+/* Overlap buffer structure */
+
+void overlap_buffer_init(overlap_handler_t *olh)
+{
+    int32_t initial_len = 32;
+
+    olh->overlap_buffer = calloc(initial_len, sizeof(overlap_pair_t));
+    die_on_alloc_fail(olh->overlap_buffer);
+    olh->overlap_buffer_len = initial_len;
+    olh->n_overlap_pairs = 0;
+}
+
+void overlap_buffer_destroy(overlap_handler_t *olh)
+{
+    if (olh != NULL) {
+        free(olh->overlap_buffer);
+        olh->overlap_buffer = NULL;
+        olh->overlap_buffer_len = 0;
+        olh->n_overlap_pairs = 0;
     }
 }
 
 /* Mate CIGAR buffer structure */
 
-void mc_buffer_init(capture_metrics_t *cm)
+void mc_buffer_init(overlap_handler_t *olh)
 {
     uint32_t initial_len = 32;
 
-    cm->mc_buffer = calloc(initial_len, sizeof(uint32_t));
-    die_on_alloc_fail(cm->mc_buffer);
-    cm->mc_buffer_len = initial_len;
-    cm->n_mc_cigar = 0;
+    olh->mc_buffer = calloc(initial_len, sizeof(uint32_t));
+    die_on_alloc_fail(olh->mc_buffer);
+
+    olh->mc_buffer_len = initial_len;
+    olh->n_mc_cigar = 0;
 }
 
-void process_record_mc_overlap(capture_metrics_t *cm, bam1_t *rec)
-{
-    char *mc_str;
-    uint8_t *mc_aux;
-    uint32_t n_mc_cigar;
-
-    if (rec->core.flag & BAM_FREAD2) {
-        if ((mc_aux = bam_aux_get(rec, "MC")) != NULL) {
-            mc_str = bam_aux2Z(mc_aux);
-            n_mc_cigar = count_cigar_ops(mc_str);
-            cm->n_mc_cigar = mc_buffer_load(cm, n_mc_cigar, mc_str);
-
-            /* process overlap */
-            overlap_buffer_generate(cm, rec);
-
-            /*
-            if (cm->n_overlap_pairs > 0) {
-                overlap_pair_t *buffer, *buffer_end;
-                buffer = cm->overlap_buffer;
-
-                for (buffer = cm->overlap_buffer, buffer_end = cm->overlap_buffer + cm->n_overlap_pairs;
-                     buffer < buffer_end;
-                     ++buffer)
-                {
-                    printf("(%d, %d), %d\n", buffer->start, buffer->end, buffer->end - buffer->start);
-                }
-                putchar('\n');
-            }
-            */
-        }
-    }
-}
-
-uint32_t mc_buffer_load(capture_metrics_t *cm, uint32_t n_mc_cigar, char *mc_str)
+void mc_buffer_load(overlap_handler_t *olh, uint32_t n_mc_cigar, char *mc_str)
 {
     bool valid_cigar;
     char *c, *end, cigar_opchr;
@@ -247,18 +235,19 @@ uint32_t mc_buffer_load(capture_metrics_t *cm, uint32_t n_mc_cigar, char *mc_str
 
     if (mc_str != NULL && n_mc_cigar > 0) {
         /* if need to enlarge arr */
-        if (n_mc_cigar > cm->mc_buffer_len) {
+        if (n_mc_cigar > olh->mc_buffer_len) {
             /* size = n_mc_cigar + 4 and realloc */
             uint32_t new_size = n_mc_cigar + 4;
-            uint32_t *tmp_mc_buffer = realloc(cm->mc_buffer, new_size * sizeof(uint32_t));
+            uint32_t *tmp_mc_buffer = realloc(olh->mc_buffer, new_size * sizeof(uint32_t));
 
             /* check realloc */
             if (tmp_mc_buffer != NULL) {
-                cm->mc_buffer = tmp_mc_buffer;
-                cm->mc_buffer_len = new_size;
-            } else { /* kill program */
-                free(cm->mc_buffer);
+                olh->mc_buffer = tmp_mc_buffer;
+                olh->mc_buffer_len = new_size;
+            } else {
+                free(olh->mc_buffer);
                 die_on_alloc_fail(tmp_mc_buffer);
+
                 return cigar_idx;
             }
         }
@@ -298,7 +287,7 @@ uint32_t mc_buffer_load(capture_metrics_t *cm, uint32_t n_mc_cigar, char *mc_str
             }
 
             if (valid_cigar) {
-                cm->mc_buffer[cigar_idx] = (cigar_len << 4) | cigar_op;
+                olh->mc_buffer[cigar_idx] = (cigar_len << 4) | cigar_op;
                 ++cigar_idx;
             } else {
                 break;
@@ -306,19 +295,20 @@ uint32_t mc_buffer_load(capture_metrics_t *cm, uint32_t n_mc_cigar, char *mc_str
         }
     }
 
-    return cigar_idx;
+    /*return cigar_idx;*/
+    olh->n_mc_cigar = cigar_idx;
 }
 
-void mc_buffer_destroy(capture_metrics_t *cm)
+void mc_buffer_destroy(overlap_handler_t *olh)
 {
-    if (cm != NULL) {
-        free(cm->mc_buffer);
-        cm->mc_buffer = NULL;
-        cm->n_mc_cigar = 0;
+    if (olh != NULL) {
+        free(olh->mc_buffer);
+        olh->mc_buffer = NULL;
+        olh->n_mc_cigar = 0;
     }
 }
 
-uint32_t count_cigar_ops(char *cigar_str)
+uint32_t _count_cigar_ops(char *cigar_str)
 {
     char *c = cigar_str;
     uint32_t count = 0;
@@ -333,6 +323,50 @@ uint32_t count_cigar_ops(char *cigar_str)
     return count;
 }
 
+void process_record_overlap(overlap_handler_t *olh, bam1_t *rec, bool remove_overlaps, bool remove_overlaps_mc)
+{
+    char *mc_str;
+    uint8_t *mc_aux;
+    uint32_t n_mc_cigar;
+
+    /* position-based overlap removal */
+    if (remove_overlaps) {
+        int32_t overlap_start, overlap_end, r_end_pos;
+        r_end_pos = bam_endpos(rec);
+
+        if (!(rec->core.flag & BAM_FMUNMAP) && /* mate pair is mapped */
+            rec->core.tid == rec->core.mtid && /* mate pair is on same chromosome */
+            rec->core.pos < rec->core.mpos &&  /* read is first read in coord-sort order */
+            rec->core.mpos < r_end_pos)        /* mate pair overlaps seq before ref-aligned end pos */
+        {
+            overlap_handler_clear(olh);
+            /* add single overlap pair (mate pos, read end pos) */
+            overlap_start = rec->core.mpos;
+            overlap_end = bam_endpos(rec);
+            overlap_handler_add(olh, overlap_start, overlap_end);
+        }
+    /* MC tag-based overlap removal */
+    } else if (remove_overlaps_mc) {
+        if (!(rec->core.flag & BAM_FMUNMAP) && /* mate pair is mapped */
+            rec->core.tid == rec->core.mtid && /* mate pair is on same chromosome */
+            rec->core.pos < rec->core.mpos &&  /* read is first read in coord-sort order */
+            rec->core.mpos < r_end_pos)        /* mate pair overlaps seq before ref-aligned end pos */
+            /*rec->core.flag & BAM_FREAD2)       / * read is read 2 */
+        {
+            /* if MC tag is present */
+            if ((mc_aux = bam_aux_get(rec, "MC")) != NULL) {
+                mc_str = bam_aux2Z(mc_aux);
+
+                /* load mc buffer from MC tag */
+                mc_buffer_load(olh, _count_cigar_ops(mc_str), mc_str);
+
+                /* regenerate overlap pairs */
+                overlap_handler_generate(olh, rec);
+            }
+        }
+    }
+}
+
 /* Capture metrics structure */
 
 /**
@@ -342,9 +376,6 @@ capture_metrics_t *capture_metrics_init()
 {
     capture_metrics_t *cm = calloc(1, sizeof(capture_metrics_t));
     die_on_alloc_fail(cm);
-
-    overlap_buffer_init(cm);
-    mc_buffer_init(cm);
 
     return cm;
 }
@@ -386,8 +417,6 @@ void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci, bed_t 
  */
 void capture_metrics_destroy(capture_metrics_t *cm)
 {
-    mc_buffer_destroy(cm);
-    overlap_buffer_destroy(cm);
     free(cm);
 }
 
@@ -405,12 +434,13 @@ void incr_cov_histo(coverage_info_t *ci, uint32_t cov)
         ci->cov_histo_len = (size_t)(cov + 1 + 256);
         tmp_cov_histo = realloc(ci->cov_histo, ci->cov_histo_len * sizeof(uint64_t));
 
+        /* check realloc */
         if (tmp_cov_histo != NULL) {
             ci->cov_histo = tmp_cov_histo;
         } else {
-            /* kill program */
             free(ci->cov_histo);
             die_on_alloc_fail(tmp_cov_histo);
+
             return;
         }
     }
@@ -823,16 +853,17 @@ void _capture_process_record2(bam1_t *rec, capture_metrics_t *cm,
  * cm_cap: Capture metrics for capture statistics
  */
 void capture_process_record(bam1_t *rec, uint32_t *coverage,
-                            capture_metrics_t *cm_wgs,
-                            capture_metrics_t *cm_cap, int32_t chrom_len,
-                            bool remove_dups, bool remove_overlaps,
+                            capture_metrics_t *cm_wgs, capture_metrics_t *cm_cap,
+                            overlap_handler_t *olh, int32_t chrom_len,
+                            bool remove_dups, bool remove_overlaps, bool remove_overlaps_mc,
                             uint8_t min_base_qual)
 {
     bool in_target, in_buffer;
     uint8_t *qual, *bqual;
-    int32_t pos, start, start_pos, end_pos, ref_pos, r_end_pos, overlap_end;
+    int32_t pos, start, start_pos, end_pos, ref_pos;
     uint32_t target, oplen, *cigar;
     uint64_t b_filt_overlap, b_filt_basequal;
+    uint64_t b_filt_target_overlap, b_filt_target_basequal;
     const uint16_t FILTER = BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL;
     const uint32_t COV_MAX = (UINT32_MAX - 1) >> 2;
 
@@ -860,12 +891,8 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
         return;
     }
 
-    if (cm_wgs != NULL) {
-        process_record_mc_overlap(cm_wgs, rec);
-    }
-    if (cm_cap != NULL) {
-        process_record_mc_overlap(cm_cap, rec);
-    }
+    /* process record for possible overlap with mate pair */
+    process_record_overlap(olh, rec, remove_overlaps, remove_overlaps_mc);
 
     /*
      * Record coverage and whether aligned bases hit target or buffer
@@ -877,19 +904,22 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
     start = rec->core.pos;
     cigar = bam_get_cigar(rec);
     bqual = bam_get_qual(rec);
-    r_end_pos = bam_endpos(rec);
     b_filt_overlap = 0;
     b_filt_basequal = 0;
+    b_filt_target_overlap = 0;
+    b_filt_target_basequal = 0;
 
-    if (remove_overlaps &&
-        !(rec->core.flag & BAM_FMUNMAP) && /* mate mapped */
-        rec->core.tid == rec->core.mtid && /* same chromosome */
-        rec->core.pos < rec->core.mpos &&  /* first read in coord-sort order */
-        rec->core.mpos < r_end_pos)        /* mate overlaps seq before ref-aligned end pos */
-    {
-        overlap_end = rec->core.mpos;
+    overlap_pair_t *curr_overlap_pair, *overlap_pair_end;
+    bool check_overlap;
+
+    if (olh->n_overlap_pairs > 0) {
+        curr_overlap_pair = olh->overlap_buffer;
+        overlap_pair_end = curr_overlap_pair + olh->n_overlap_pairs;
+        check_overlap = true;
     } else {
-        overlap_end = r_end_pos;
+        curr_overlap_pair = NULL;
+        overlap_pair_end = NULL;
+        check_overlap = false;
     }
 
     /* for each CIGAR op */
@@ -920,12 +950,22 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                 }
 
                 qual = bqual + ref_pos;
+
                 while (pos <= end_pos) {
                     if (get_coverage(coverage[pos]) < COV_MAX) {
-                        if (pos >= overlap_end) {
+                        if (check_overlap &&
+                            pos >= curr_overlap_pair->start &&
+                            pos < curr_overlap_pair->end)
+                        {
                             ++b_filt_overlap;
+                            if (get_target(coverage[pos]) == TARGET_IN) {
+                                ++b_filt_target_overlap;
+                            }
                         } else if (*qual < min_base_qual) {
                             ++b_filt_basequal;
+                            if (get_target(coverage[pos]) == TARGET_IN) {
+                                ++b_filt_target_overlap;
+                            }
                         } else {
                             ++coverage[pos];
                         }
@@ -934,8 +974,21 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
                         log_warning("Coverage of greater than %u detected. "
                                     "Coverage statistics may not be accurate.", COV_MAX);
                     }
+
                     ++pos;
                     ++qual;
+
+                    /* if pos is past current overlap pair, advance to next */
+                    if (check_overlap && pos >= curr_overlap_pair->end) {
+                        ++curr_overlap_pair;
+
+                        /* no more overlap pairs */
+                        if (curr_overlap_pair == overlap_pair_end) {
+                            curr_overlap_pair = NULL;
+                            overlap_pair_end = NULL;
+                            check_overlap = false;
+                        }
+                    }
                 }
 
                 /* pos == end_pos */
@@ -967,10 +1020,9 @@ void capture_process_record(bam1_t *rec, uint32_t *coverage,
         _capture_process_record2(rec, cm_wgs, TARGET_OUT);
     }
     if (cm_cap != NULL) {
-        cm_cap->b_filt_overlap += b_filt_overlap;
-        cm_cap->b_filt_basequal += b_filt_basequal;
-        _capture_process_record2(rec, cm_cap,
-            in_target ? TARGET_IN : in_buffer ? TARGET_BUFFER : TARGET_OUT);
+        cm_cap->b_filt_overlap += b_filt_target_overlap;
+        cm_cap->b_filt_basequal += b_filt_target_basequal;
+        _capture_process_record2(rec, cm_cap, in_target ? TARGET_IN : in_buffer ? TARGET_BUFFER : TARGET_OUT);
     }
 }
 

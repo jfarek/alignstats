@@ -14,7 +14,7 @@
  * ------===< AlignStats >===------
  * Produce a report of alignment and coverage metrics for an input SAM, BAM, or CRAM file.
  *
- * Copyright 2015-2018 Baylor College of Medicine Human Genome Sequencing Center
+ * Copyright 2015-2019 Baylor College of Medicine Human Genome Sequencing Center
  *
  * Author: Jesse Farek (farek at bcm dot edu)
  * License: BSD 3-clause (see LICENSE or https://opensource.org/licenses/BSD-3-Clause)
@@ -35,7 +35,7 @@ void usage()
     fprintf(stderr, "                  [-h] [-v] [-n NUMREADS] [-p] [-P INT]\n");
     fprintf(stderr, "                  [-r REGIONS] [-t TARGET] [-m COVMASK] [-T REFFASTA]\n");
     fprintf(stderr, "                  [-q INT] [-f INT] [-F INT] [-b INT]\n");
-    fprintf(stderr, "                  [-D] [-O] [-U] [-A] [-C] [-W]\n");
+    fprintf(stderr, "                  [-D] [-M] [-O] [-U] [-A] [-C] [-W]\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Runtime options:\n");
     fprintf(stderr, "    -h          Print usage information.\n");
@@ -69,7 +69,9 @@ void usage()
     fprintf(stderr, "\n");
     fprintf(stderr, "Reporting options:\n");
     fprintf(stderr, "    -D          Disable excluding duplicate reads from coverage statistics.\n");
-    fprintf(stderr, "    -O          Disable excluding overlapping bases in paired-end reads from\n");
+    fprintf(stderr, "    -M          Enable excluding overlapping bases in paired-end reads by\n");
+    fprintf(stderr, "                determining overlapping bases from MC tag.\n");
+    fprintf(stderr, "    -O          Enable excluding overlapping bases in paired-end reads from\n");
     fprintf(stderr, "                first read in coordinate-sorted order from coverage statistics.\n");
     fprintf(stderr, "    -U          Disable processing unplaced unmapped reads (CHROM \"*\") when\n");
     fprintf(stderr, "                using the -r option.\n");
@@ -137,7 +139,8 @@ int main(int argc, char **argv)
     args->do_cov_mask = false;
     args->do_pthread = false;
     args->remove_dups = true;
-    args->remove_overlaps = true;
+    args->remove_overlaps = false;
+    args->remove_overlaps_mc = false;
     args->process_unmapped = true;
     args->process_unmapped_done = false;
 
@@ -184,6 +187,7 @@ int main(int argc, char **argv)
     args->ci_wgs = NULL;
     args->ti = NULL;
     args->cov_mask_ti = NULL;
+    args->olh = NULL;
     args->coverage = NULL;
     args->report = NULL;
 
@@ -200,7 +204,7 @@ int main(int argc, char **argv)
     filter_excl = 0;
 
     /* Read parameters */
-    while ((c = getopt(argc, argv, "ACDF:OP:T:UWb:f:hi:j:m:n:o:pq:r:t:v")) != -1) {
+    while ((c = getopt(argc, argv, "ACDF:MOP:T:UWb:f:hi:j:m:n:o:pq:r:t:v")) != -1) {
         switch (c) {
         case 'A': /* Turn off alignment stats */
             args->do_alignment = false;
@@ -217,8 +221,11 @@ int main(int argc, char **argv)
                 filter_excl = 0;
             }
             break;
-        case 'O': /* Don't remove overlapping reads-pair bases from first coord-sorted read */
-            args->remove_overlaps = false;
+        case 'M': /* Remove overlapping reads-pair bases based on MC tag */
+            args->remove_overlaps_mc = true;
+            break;
+        case 'O': /* Remove overlapping reads-pair bases from first coord-sorted read */
+            args->remove_overlaps = true;
             break;
         case 'P': /* Number of HTSlib decompression threads */
             num_hts_threads = (uint8_t)strtol(optarg, &end, 10);
@@ -623,6 +630,8 @@ int main(int argc, char **argv)
     if (args->do_wgs || args->do_capture) {
         args->coverage = calloc(max_chrom_len, sizeof(uint32_t));
         die_on_alloc_fail(args->coverage);
+
+        args->olh = overlap_handler_init();
     }
 
     for (uint32_t i = 0; i < RECORD_BUFFER_SECTIONS; ++i) {
@@ -729,6 +738,7 @@ end:
     capture_metrics_destroy(args->cm_wgs);
     coverage_info_destroy(args->ci);
     coverage_info_destroy(args->ci_wgs);
+    overlap_handler_destroy(args->olh);
     filter_counter_destroy(args->fc);
     bed_destroy(args->ti);
     bed_destroy(args->cov_mask_ti);

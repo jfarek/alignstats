@@ -363,9 +363,11 @@ uint32_t process_records(args_t *args)
                     args->coverage,
                     args->cm_wgs,
                     args->cm,
+                    args->olh,
                     args->curr_chrom_len,
                     args->remove_dups,
                     args->remove_overlaps,
+                    args->remove_overlaps_mc,
                     args->min_base_qual);
             }
         }

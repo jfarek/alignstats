@@ -30,13 +30,6 @@ typedef struct coverage_info coverage_info_t;
 coverage_info_t *coverage_info_init();
 void coverage_info_destroy(coverage_info_t *ci);
 
-/* Overlap interval start and end position pair */
-struct overlap_pair {
-    int32_t start;
-    int32_t end;
-};
-typedef struct overlap_pair overlap_pair_t;
-
 /* Capture metrics structure */
 struct capture_metrics {
     /* Read info */
@@ -83,7 +76,18 @@ struct capture_metrics {
     uint64_t c_median; /* Median coverage */
     double c_std_dev;  /* Coverage sample standard deviation */
     uint64_t c_sum_sq; /* Sum of squared coverage values (for c_std_dev) */
+};
+typedef struct capture_metrics capture_metrics_t;
 
+/* Overlap interval start and end position pair */
+struct overlap_pair {
+    int32_t start;
+    int32_t end;
+};
+typedef struct overlap_pair overlap_pair_t;
+
+/* Overlap handler */
+struct overlap_handler {
     /* Overlap intervals */
     overlap_pair_t *overlap_buffer;
     uint32_t n_overlap_pairs;
@@ -94,7 +98,7 @@ struct capture_metrics {
     uint32_t n_mc_cigar;
     uint32_t mc_buffer_len;
 };
-typedef struct capture_metrics capture_metrics_t;
+typedef struct overlap_handler overlap_handler_t;
 
 capture_metrics_t *capture_metrics_init();
 void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci,
@@ -119,24 +123,28 @@ void set_target_cov(uint32_t *coverage, capture_metrics_t *cm, bed_t *ti,
                     int32_t chrom_idx, int32_t chrom_len);
 void capture_process_record(bam1_t *rec, uint32_t *coverage,
                             /*const uint8_t *target_cov,*/
-                            capture_metrics_t *cm_wgs,
-                            capture_metrics_t *cm_cap, int32_t chrom_len,
-                            bool remove_dups, bool remove_overlaps,
+                            capture_metrics_t *cm_wgs, capture_metrics_t *cm_cap, 
+                            overlap_handler_t *olh, int32_t chrom_len,
+                            bool remove_dups, bool remove_overlaps, bool remove_overlaps_mc,
                             uint8_t min_base_qual);
 void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti, char *key_buffer, char *value_buffer);
 
-/* Overlap pair */
-void overlap_buffer_init(capture_metrics_t *cm);
-void overlap_buffer_add(capture_metrics_t *cm, int32_t start, int32_t end);
-void overlap_buffer_clear(capture_metrics_t *cm);
-void overlap_buffer_generate(capture_metrics_t *cm, bam1_t *rec);
-void overlap_buffer_destroy(capture_metrics_t *cm);
-void advance_to_coverage_cigar(uint32_t **cigar_dptr, uint32_t **cigar_end_dptr, int32_t *rpos);
+/* Overlap handler */
+overlap_handler_t *overlap_handler_init();
+void overlap_handler_add(overlap_handler_t *olh, int32_t start, int32_t end);
+void overlap_handler_clear(overlap_handler_t *olh);
+void overlap_handler_generate(overlap_handler_t *olh, bam1_t *rec);
+void overlap_handler_destroy(overlap_handler_t *olh);
+
+/* Overlap buffer */
+void overlap_buffer_init(overlap_handler_t *olh);
+void overlap_buffer_destroy(overlap_handler_t *olh);
 
 /* Mate CIGAR */
-void mc_buffer_init(capture_metrics_t *cm);
-uint32_t mc_buffer_load(capture_metrics_t *cm, uint32_t n_mc_ops, char *mc_str);
-void mc_buffer_destroy(capture_metrics_t *cm);
-uint32_t count_cigar_ops(char *cigar_str);
+void mc_buffer_init(overlap_handler_t *olh);
+uint32_t mc_buffer_load(overlap_handler_t *olh, uint32_t n_mc_ops, char *mc_str);
+void mc_buffer_destroy(overlap_handler_t *olh);
+
+void process_record_overlap(overlap_handler_t *olh, bam1_t *rec, bool remove_overlaps, bool remove_overlaps_mc);
 
 #endif /* _COVERAGE_H */

@@ -25,7 +25,7 @@
 #include <semaphore.h>
 #endif
 
-#define ALIGNSTATS_VERSION "0.8"
+#define ALIGNSTATS_VERSION "0.9"
 #define RECORD_BUFFER_SIZE 0x4000
 #define RECORD_BUFFER_SECTIONS 0x10
 
@@ -52,6 +52,7 @@ struct args {
     bool do_pthread;
     bool remove_dups;
     bool remove_overlaps;
+    bool remove_overlaps_mc;
     bool process_unmapped;
     bool process_unmapped_done;
 
@@ -96,6 +97,7 @@ struct args {
     coverage_info_t *ci_wgs;
     bed_t *ti;
     bed_t *cov_mask_ti;
+    overlap_handler_t *olh;
 
     /* Calculators */
     align_metrics_t *am_all;
