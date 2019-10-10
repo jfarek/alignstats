@@ -309,6 +309,12 @@ int main(int argc, char **argv)
         goto end;
     }
 
+    if (args->remove_overlaps && args->remove_overlaps_mc) {
+        log_error("Options -M and -O cannot be set simultaneously.");
+        exit_val = EXIT_FAILURE;
+        goto end;
+    }
+
     if (args->input_fn == NULL) {
         args->input_fn = "-";
     }

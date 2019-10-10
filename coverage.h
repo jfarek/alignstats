@@ -142,7 +142,7 @@ void overlap_buffer_destroy(overlap_handler_t *olh);
 
 /* Mate CIGAR */
 void mc_buffer_init(overlap_handler_t *olh);
-uint32_t mc_buffer_load(overlap_handler_t *olh, uint32_t n_mc_ops, char *mc_str);
+void mc_buffer_load(overlap_handler_t *olh, uint32_t n_mc_ops, char *mc_str);
 void mc_buffer_destroy(overlap_handler_t *olh);
 
 void process_record_overlap(overlap_handler_t *olh, bam1_t *rec, bool remove_overlaps, bool remove_overlaps_mc);
