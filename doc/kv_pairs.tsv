@@ -148,8 +148,14 @@ WgsCoverageBases40	Integer	Number of bases with coverage of at least 40 reads
 WgsCoverageBases40Pct	Float	Bases with coverage of at least 40 reads as percentage of total bases
 WgsCoverageBases50	Integer	Number of bases with coverage of at least 50 reads
 WgsCoverageBases50Pct	Float	Bases with coverage of at least 50 reads as percentage of total bases
+WgsCoverageBases60	Integer	Number of bases with coverage of at least 60 reads
+WgsCoverageBases60Pct	Float	Bases with coverage of at least 60 reads as percentage of total bases
+WgsCoverageBases70	Integer	Number of bases with coverage of at least 70 reads
+WgsCoverageBases70Pct	Float	Bases with coverage of at least 70 reads as percentage of total bases
 WgsCoverageBases100	Integer	Number of bases with coverage of at least 100 reads
 WgsCoverageBases100Pct	Float	Bases with coverage of at least 100 reads as percentage of total bases
+WgsCoverageBases500	Integer	Number of bases with coverage of at least 500 reads
+WgsCoverageBases500Pct	Float	Bases with coverage of at least 500 reads as percentage of total bases
 WgsCoverageBases1000	Integer	Number of bases with coverage of at least 1000 reads
 WgsCoverageBases1000Pct	Float	Bases with coverage of at least 1000 reads as percentage of total bases
 CapTotalReads	Integer	Total number of reads
@@ -176,8 +182,14 @@ CapCoverageBases40	Integer	Bases with coverage of at least 40 reads within targe
 CapCoverageBases40Pct	Float	Bases with coverage of at least 40 reads as percentage of total bases within target regions
 CapCoverageBases50	Integer	Bases with coverage of at least 50 reads within target regions
 CapCoverageBases50Pct	Float	Bases with coverage of at least 50 reads as percentage of total bases within target regions
+CapCoverageBases60	Integer	Bases with coverage of at least 60 reads within target regions
+CapCoverageBases60Pct	Float	Bases with coverage of at least 60 reads as percentage of total bases within target regions
+CapCoverageBases70	Integer	Bases with coverage of at least 70 reads within target regions
+CapCoverageBases70Pct	Float	Bases with coverage of at least 70 reads as percentage of total bases within target regions
 CapCoverageBases100	Integer	Bases with coverage of at least 100 reads within target regions
 CapCoverageBases100Pct	Float	Bases with coverage of at least 100 reads as percentage of total bases within target regions
+CapCoverageBases500	Integer	Bases with coverage of at least 500 reads within target regions
+CapCoverageBases500Pct	Float	Bases with coverage of at least 500 reads as percentage of total bases within target regions
 CapCoverageBases1000	Integer	Bases with coverage of at least 1000 reads within target regions
 CapCoverageBases1000Pct	Float	Bases with coverage of at least 1000 reads as percentage of total bases within target regions
 CapBufferAlignedReads	Integer	Number of aligned reads in buffer regions but not in target regions

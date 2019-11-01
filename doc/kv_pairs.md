@@ -159,8 +159,14 @@ table, th, td {
 <tr><td>WgsCoverageBases40Pct</td><td>Float</td><td>Bases with coverage of at least 40 reads as percentage of total bases</td></tr>
 <tr><td>WgsCoverageBases50</td><td>Integer</td><td>Number of bases with coverage of at least 50 reads</td></tr>
 <tr><td>WgsCoverageBases50Pct</td><td>Float</td><td>Bases with coverage of at least 50 reads as percentage of total bases</td></tr>
+<tr><td>WgsCoverageBases60</td><td>Integer</td><td>Number of bases with coverage of at least 60 reads</td></tr>
+<tr><td>WgsCoverageBases60Pct</td><td>Float</td><td>Bases with coverage of at least 60 reads as percentage of total bases</td></tr>
+<tr><td>WgsCoverageBases70</td><td>Integer</td><td>Number of bases with coverage of at least 70 reads</td></tr>
+<tr><td>WgsCoverageBases70Pct</td><td>Float</td><td>Bases with coverage of at least 70 reads as percentage of total bases</td></tr>
 <tr><td>WgsCoverageBases100</td><td>Integer</td><td>Number of bases with coverage of at least 100 reads</td></tr>
 <tr><td>WgsCoverageBases100Pct</td><td>Float</td><td>Bases with coverage of at least 100 reads as percentage of total bases</td></tr>
+<tr><td>WgsCoverageBases500</td><td>Integer</td><td>Number of bases with coverage of at least 500 reads</td></tr>
+<tr><td>WgsCoverageBases500Pct</td><td>Float</td><td>Bases with coverage of at least 100 reads as percentage of total bases</td></tr>
 <tr><td>WgsCoverageBases1000</td><td>Integer</td><td>Number of bases with coverage of at least 1000 reads</td></tr>
 <tr><td>WgsCoverageBases1000Pct</td><td>Float</td><td>Bases with coverage of at least 1000 reads as percentage of total bases</td></tr>
 <tr><td>CapTotalReads</td><td>Integer</td><td>Total number of reads</td></tr>
@@ -187,8 +193,14 @@ table, th, td {
 <tr><td>CapCoverageBases40Pct</td><td>Float</td><td>Bases with coverage of at least 40 reads as percentage of total bases within target regions</td></tr>
 <tr><td>CapCoverageBases50</td><td>Integer</td><td>Bases with coverage of at least 50 reads within target regions</td></tr>
 <tr><td>CapCoverageBases50Pct</td><td>Float</td><td>Bases with coverage of at least 50 reads as percentage of total bases within target regions</td></tr>
+<tr><td>CapCoverageBases60</td><td>Integer</td><td>Bases with coverage of at least 60 reads within target regions</td></tr>
+<tr><td>CapCoverageBases60Pct</td><td>Float</td><td>Bases with coverage of at least 60 reads as percentage of total bases within target regions</td></tr>
+<tr><td>CapCoverageBases70</td><td>Integer</td><td>Bases with coverage of at least 70 reads within target regions</td></tr>
+<tr><td>CapCoverageBases70Pct</td><td>Float</td><td>Bases with coverage of at least 70 reads as percentage of total bases within target regions</td></tr>
 <tr><td>CapCoverageBases100</td><td>Integer</td><td>Bases with coverage of at least 100 reads within target regions</td></tr>
 <tr><td>CapCoverageBases100Pct</td><td>Float</td><td>Bases with coverage of at least 100 reads as percentage of total bases within target regions</td></tr>
+<tr><td>CapCoverageBases500</td><td>Integer</td><td>Bases with coverage of at least 500 reads within target regions</td></tr>
+<tr><td>CapCoverageBases500Pct</td><td>Float</td><td>Bases with coverage of at least 500 reads as percentage of total bases within target regions</td></tr>
 <tr><td>CapCoverageBases1000</td><td>Integer</td><td>Bases with coverage of at least 1000 reads within target regions</td></tr>
 <tr><td>CapCoverageBases1000Pct</td><td>Float</td><td>Bases with coverage of at least 1000 reads as percentage of total bases within target regions</td></tr>
 <tr><td>CapBufferAlignedReads</td><td>Integer</td><td>Number of aligned reads in buffer regions but not in target regions</td></tr>

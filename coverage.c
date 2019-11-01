@@ -460,37 +460,49 @@ void handle_wgs_coverage(const uint32_t *coverage, capture_metrics_t *cm,
         cov = get_coverage(coverage[i]);
 
         /* Bases with coverage of at least 1, 10, 20, etc. */
-        if (cov < 20) {
-            if (cov < 10) {
-                if (cov < 1) {
-                    goto cov0;
-                } else {
-                    goto cov1;
-                }
+        if (cov < 30) {
+            if (cov == 0) {
+                goto cov0;
             } else {
                 if (cov < 15) {
-                    goto cov10;
+                    if (cov < 10) {
+                        goto cov1;
+                    } else {
+                        goto cov10;
+                    }
                 } else {
-                    goto cov15;
+                    if (cov < 20) {
+                        goto cov15;
+                    } else {
+                        goto cov20;
+                    }
                 }
             }
         } else {
-            if (cov < 40) {
-                if (cov < 30) {
-                    goto cov20;
+            if (cov < 70) {
+                if (cov < 50) {
+                    if (cov < 40) {
+                        goto cov30;
+                    } else {
+                        goto cov40;
+                    }
                 } else {
-                    goto cov30;
+                    if (cov < 60) {
+                        goto cov50;
+                    } else {
+                        goto cov60;
+                    }
                 }
             } else {
-                if (cov < 100) {
-                    if (cov < 50) {
-                        goto cov40;
+                if (cov < 500) {
+                    if (cov < 100) {
+                        goto cov70;
                     } else {
-                        goto cov50;
+                        goto cov100;
                     }
                 } else {
                     if (cov < 1000) {
-                        goto cov100;
+                        goto cov500;
                     } else {
                         goto cov1000;
                     }
@@ -499,7 +511,10 @@ void handle_wgs_coverage(const uint32_t *coverage, capture_metrics_t *cm,
         }
 
 cov1000:++cm->b_1000_plus_hits;
+cov500: ++cm->b_500_plus_hits;
 cov100: ++cm->b_100_plus_hits;
+cov70:  ++cm->b_70_plus_hits;
+cov60:  ++cm->b_60_plus_hits;
 cov50:  ++cm->b_50_plus_hits;
 cov40:  ++cm->b_40_plus_hits;
 cov30:  ++cm->b_30_plus_hits;
@@ -537,37 +552,49 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
             cov = get_coverage(coverage[j]);
 
             /* Bases with coverage of at least 1, 10, 20, etc. */
-            if (cov < 20) {
-                if (cov < 10) {
-                    if (cov < 1) {
-                        goto tgtcov0;
-                    } else {
-                        goto tgtcov1;
-                    }
+            if (cov < 30) {
+                if (cov == 0) {
+                    goto tgtcov0;
                 } else {
                     if (cov < 15) {
-                        goto tgtcov10;
+                        if (cov < 10) {
+                            goto tgtcov1;
+                        } else {
+                            goto tgtcov10;
+                        }
                     } else {
-                        goto tgtcov15;
+                        if (cov < 20) {
+                            goto tgtcov15;
+                        } else {
+                            goto tgtcov20;
+                        }
                     }
                 }
             } else {
-                if (cov < 40) {
-                    if (cov < 30) {
-                        goto tgtcov20;
+                if (cov < 70) {
+                    if (cov < 50) {
+                        if (cov < 40) {
+                            goto tgtcov30;
+                        } else {
+                            goto tgtcov40;
+                        }
                     } else {
-                        goto tgtcov30;
+                        if (cov < 60) {
+                            goto tgtcov50;
+                        } else {
+                            goto tgtcov60;
+                        }
                     }
                 } else {
-                    if (cov < 100) {
-                        if (cov < 50) {
-                            goto tgtcov40;
+                    if (cov < 500) {
+                        if (cov < 100) {
+                            goto tgtcov70;
                         } else {
-                            goto tgtcov50;
+                            goto tgtcov100;
                         }
                     } else {
                         if (cov < 1000) {
-                            goto tgtcov100;
+                            goto tgtcov500;
                         } else {
                             goto tgtcov1000;
                         }
@@ -576,7 +603,10 @@ void handle_target_coverage(const uint32_t *coverage, capture_metrics_t *cm,
             }
 
 tgtcov1000: ++cm->b_1000_plus_hits;
+tgtcov500:  ++cm->b_500_plus_hits;
 tgtcov100:  ++cm->b_100_plus_hits;
+tgtcov70:   ++cm->b_70_plus_hits;
+tgtcov60:   ++cm->b_60_plus_hits;
 tgtcov50:   ++cm->b_50_plus_hits;
 tgtcov40:   ++cm->b_40_plus_hits;
 tgtcov30:   ++cm->b_30_plus_hits;
@@ -1145,12 +1175,36 @@ void capture_report(report_t *report, capture_metrics_t *cm, bed_t *ti, char *ke
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_50_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
+    copy_to_buffer(key_start, "CoverageBases60", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_60_plus_hits);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "CoverageBases60Pct", copy_size);
+    print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_60_plus_hits, denominator);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "CoverageBases70", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_70_plus_hits);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "CoverageBases70Pct", copy_size);
+    print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_70_plus_hits, denominator);
+    report_add_key_value(report, key_buffer, value_buffer);
+
     copy_to_buffer(key_start, "CoverageBases100", copy_size);
     snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_100_plus_hits);
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "CoverageBases100Pct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_100_plus_hits, denominator);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "CoverageBases500", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", cm->b_500_plus_hits);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "CoverageBases500Pct", copy_size);
+    print_pct(value_buffer, REPORT_BUFFER_SIZE, cm->b_500_plus_hits, denominator);
     report_add_key_value(report, key_buffer, value_buffer);
 
     copy_to_buffer(key_start, "CoverageBases1000", copy_size);

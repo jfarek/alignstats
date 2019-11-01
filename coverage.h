@@ -55,6 +55,8 @@ struct capture_metrics {
     uint64_t b_30_plus_hits;   /* Target bases with >= 30X coverage */
     uint64_t b_40_plus_hits;   /* Target bases with >= 40X coverage */
     uint64_t b_50_plus_hits;   /* Target bases with >= 50X coverage */
+    uint64_t b_60_plus_hits;   /* Target bases with >= 60X coverage */
+    uint64_t b_70_plus_hits;   /* Target bases with >= 70X coverage */
     uint64_t b_100_plus_hits;  /* Target bases with >= 100X coverage */
     uint64_t b_500_plus_hits;  /* Target bases with >= 500X coverage */
     uint64_t b_1000_plus_hits; /* Target bases with >= 1000X coverage */
