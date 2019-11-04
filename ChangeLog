@@ -1,5 +1,17 @@
 ChangeLog
 
+AlignStats v0.9 (4 Nov 2019)
+
+- Default behavior for filtering read pair base overlap from coverage metrics
+reverted to pre-v0.8 behavior (i.e. not activated by default). Use either `-M`
+or `-O` for filtering read pair base overlaps.
+- New option `-M` enables filtering of read pair base overlap from counting
+towards coverage statistics, using MC (mate cigar) tags when available for
+determining exact overlap spans.
+- Option `-O` now enables filtering of read pair base overlap from counting
+towards coverage statistics, using a simpler read start position-based method
+that does not depend on the presence of MC tags but may be less accurate.
+- Include coverage metrics for 60X, 70X, and 500X.
 
 AlignStats v0.8 (8 Sep 2019)
 
