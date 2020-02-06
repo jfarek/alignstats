@@ -436,6 +436,9 @@ void incr_cov_histo(coverage_info_t *ci, uint32_t cov)
         /* check realloc */
         if (tmp_cov_histo != NULL) {
             ci->cov_histo = tmp_cov_histo;
+            for (size_t i = cov + 1; i < cov + 1 + 256; ++i) {
+                ci->cov_histo[i] = 0;
+            }
         } else {
             free(ci->cov_histo);
             die_on_alloc_fail(tmp_cov_histo);
