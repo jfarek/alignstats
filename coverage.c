@@ -426,17 +426,18 @@ void capture_metrics_destroy(capture_metrics_t *cm)
  */
 void incr_cov_histo(coverage_info_t *ci, uint32_t cov)
 {
-    uint64_t *tmp_cov_histo;
+    uint64_t *tmp_cov_histo, prev_histo_len;
 
-    if (cov + 1 > ci->cov_histo_len) {
+    if ((size_t)cov >= ci->cov_histo_len) {
         /* Buffer an additional 256 to reduce # of reallocs for slowly increasing coverage */
+        prev_histo_len = ci->cov_histo_len;
         ci->cov_histo_len = (size_t)(cov + 1 + 256);
         tmp_cov_histo = realloc(ci->cov_histo, ci->cov_histo_len * sizeof(uint64_t));
 
         /* check realloc */
         if (tmp_cov_histo != NULL) {
             ci->cov_histo = tmp_cov_histo;
-            for (size_t i = cov + 1; i < cov + 1 + 256; ++i) {
+            for (size_t i = (size_t)prev_histo_len; i < ci->cov_histo_len; ++i) {
                 ci->cov_histo[i] = 0;
             }
         } else {
