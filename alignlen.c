@@ -110,7 +110,7 @@ void align_len_finalize(align_len_metrics_t *alm)
             }
 
             alm->std_dev = k > 1
-                ? sqrt(((double)alm->sum_sq - ((double)sum * (double)sum) / (double)k) /
+                ? sqrt(((double)alm->sum_sq - (double)sum * ((double)sum / (double)k)) /
                        (double)(k - 1))
                 : 0.0;
         } else {

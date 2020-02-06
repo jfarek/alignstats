@@ -403,7 +403,7 @@ void capture_metrics_finalize(capture_metrics_t *cm, coverage_info_t *ci, bed_t 
     }
 
     cm->c_std_dev = k > 1
-        ? sqrt(((double)cm->c_sum_sq - ((double)sum * (double)sum) / (double)k) /
+        ? sqrt(((double)cm->c_sum_sq - (double)sum * ((double)sum / (double)k)) /
                (double)(k - 1))
         : 0.0;
 

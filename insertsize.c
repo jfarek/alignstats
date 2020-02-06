@@ -114,7 +114,7 @@ void insert_size_finalize(insert_size_metrics_t *ism)
 
             /* Sample standard deviation insertion size */
             ism->std_dev = k > 1
-                ? sqrt(((double)ism->sum_sq - ((double)sum * (double)sum) / (double)k) /
+                ? sqrt(((double)ism->sum_sq - (double)sum * ((double)sum / (double)k)) /
                        (double)(k - 1))
                 : 0.0;
         } else {
