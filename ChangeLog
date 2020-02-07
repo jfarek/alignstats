@@ -1,5 +1,10 @@
 ChangeLog
 
+AlignStats v0.9.1 (7 Feb 2020)
+
+- Fix procedure for realloc-ing coverage length histogram data structure for
+higher coverage values.
+
 AlignStats v0.9 (4 Nov 2019)
 
 - Default behavior for filtering read pair base overlap from coverage metrics
