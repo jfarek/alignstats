@@ -11,9 +11,9 @@ UnmappedReadsPct	Float	Unmapped reads as percentage of YieldReads
 UnmappedBases	Integer	Sum of bases in unmapped reads
 UnmappedBasesPct	Float	Bases in unmapped reads as percentage of YieldBases
 DuplicateReads	Integer	Number of mapped duplicate reads
-DuplicateReadsPct	Float	Mapped duplicate reads as percentage of aligned reads
+DuplicateReadsPct	Float	Mapped duplicate reads as percentage of mapped reads passing QC
 DuplicateBases	Integer	Sum of bases in duplicate reads
-DuplicateBasesPct	Float	Sum of bases in duplicate reads as percentage of AlignedBases
+DuplicateBasesPct	Float	Sum of bases in duplicate reads as percentage of bases in mapped reads passing QC
 MappedReads	Integer	Number of mapped reads
 MappedReadsPct	Float	Mapped reads as percentage of YieldReads
 MappedBases	Integer	Sum of bases in mapped reads

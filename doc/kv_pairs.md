@@ -22,9 +22,9 @@ table, th, td {
 <tr><td>UnmappedBases</td><td>Integer</td><td>Sum of bases in unmapped reads</td></tr>
 <tr><td>UnmappedBasesPct</td><td>Float</td><td>Bases in unmapped reads as percentage of YieldBases</td></tr>
 <tr><td>DuplicateReads</td><td>Integer</td><td>Number of mapped duplicate reads</td></tr>
-<tr><td>DuplicateReadsPct</td><td>Float</td><td>Mapped duplicate reads as percentage of aligned reads</td></tr>
+<tr><td>DuplicateReadsPct</td><td>Float</td><td>Mapped duplicate reads as percentage of mapped reads passing QC</td></tr>
 <tr><td>DuplicateBases</td><td>Integer</td><td>Sum of bases in duplicate reads</td></tr>
-<tr><td>DuplicateBasesPct</td><td>Float</td><td>Sum of bases in duplicate reads as percentage of AlignedBases</td></tr>
+<tr><td>DuplicateBasesPct</td><td>Float</td><td>Sum of bases in duplicate reads as percentage of bases in mapped reads passing QC</td></tr>
 <tr><td>MappedReads</td><td>Integer</td><td>Number of mapped reads</td></tr>
 <tr><td>MappedReadsPct</td><td>Float</td><td>Mapped reads as percentage of YieldReads</td></tr>
 <tr><td>MappedBases</td><td>Integer</td><td>Sum of bases in mapped reads</td></tr>

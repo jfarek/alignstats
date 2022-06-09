@@ -243,7 +243,7 @@ uint32_t process_records(args_t *args)
             log_warning(
                 "Record not in coordinate-sorted order. "
                 "Results may not be accurate: "
-                "tid %d, pos %d > %d",
+                "tid %d, pos %d > %ld",
                 args->curr_chrom_idx,
                 prev_rec_pos + 1,
                 rec->core.pos + 1);

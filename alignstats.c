@@ -715,7 +715,7 @@ int main(int argc, char **argv)
 
     /* Clean up */
 end:
-    bam_hdr_destroy(args->hdr);
+    sam_hdr_destroy(args->hdr);
     if (args->input_sf != NULL) {
         sam_close(args->input_sf);
     }

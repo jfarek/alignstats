@@ -11,7 +11,7 @@
 struct align_metrics {
     /* Read metrics */
     uint64_t r_total;
-    uint64_t r_aligned;
+    uint64_t r_aligned_qc_pass;
     uint64_t r_dup;
     uint64_t r_mapped;
     uint64_t r_unmapped;
@@ -20,6 +20,7 @@ struct align_metrics {
 
     /* Base metrics */
     uint64_t b_total;
+    uint64_t b_aligned_qc_pass;
     uint64_t b_dup;
     uint64_t b_mapped;
     uint64_t b_unmapped;

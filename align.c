@@ -59,7 +59,8 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
 
         /* Aligned reads: filter out reads with filtered flags */
         if (!(rec->core.flag & am->filter)) {
-            ++am->r_aligned;
+            ++am->r_aligned_qc_pass;
+            am->b_aligned_qc_pass += rec->core.l_qseq;
 
             /* Duplicate reads */
             if (rec->core.flag & BAM_FDUP) {
@@ -225,7 +226,7 @@ void align_report(report_t *report, align_metrics_t *am, read_type_t rt, char *k
         report_add_key_value(report, key_buffer, value_buffer);
 
         copy_to_buffer(key_start, "DuplicateReadsPct", copy_size);
-        print_pct(value_buffer, REPORT_BUFFER_SIZE, am->r_dup, am->r_aligned);
+        print_pct(value_buffer, REPORT_BUFFER_SIZE, am->r_dup, am->r_aligned_qc_pass);
         report_add_key_value(report, key_buffer, value_buffer);
 
         copy_to_buffer(key_start, "DuplicateBases", copy_size);
@@ -233,7 +234,7 @@ void align_report(report_t *report, align_metrics_t *am, read_type_t rt, char *k
         report_add_key_value(report, key_buffer, value_buffer);
 
         copy_to_buffer(key_start, "DuplicateBasesPct", copy_size);
-        print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_dup, am->b_aligned);
+        print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_dup, am->b_aligned_qc_pass);
         report_add_key_value(report, key_buffer, value_buffer);
     }
 
