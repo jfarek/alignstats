@@ -1,5 +1,10 @@
 ChangeLog
 
+AlignStats v0.10 (9 Jun 2022)
+
+- Correct DuplicateBasesPct calculation as the sum of bases in duplicate reads
+as percentage of bases in mapped reads passing QC.
+
 AlignStats v0.9.1 (7 Feb 2020)
 
 - Fix procedure for realloc-ing coverage length histogram data structure for
