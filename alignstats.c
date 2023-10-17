@@ -100,7 +100,7 @@ int main(int argc, char **argv)
     uint8_t num_hts_threads;
     uint16_t filter_incl, filter_excl;
     uint32_t max_chrom_len, min_buffer_reads, max_reads_tmp;
-    size_t fn_len, rec_buff_size;
+    size_t fn_len, ref_buff_len;
     void *status;
     FILE *target_fp, *cov_mask_fp, *regions_fp;
     enum input_format format;
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
             args->input_fn = optarg;
             break;
         case 'j': /* Input file format */
-            strncpy(fmt, optarg, FMT_LEN);
+            strncpy(fmt, optarg, FMT_LEN-1);
             break;
         case 'm': /* Coverage mask filename */
             cov_mask_fn = optarg;
@@ -390,12 +390,13 @@ int main(int argc, char **argv)
 
     /* Set reference .fa.fai for cram input */
     if (format == INPUT_CRAM) {
-        rec_buff_size = strlen(reference_fn) + 5;
-        ref_buff = calloc(rec_buff_size, sizeof(char));
+        ref_buff_len = strlen(reference_fn) + 4; /* ref + ".fai" */
+        ref_buff = malloc((size_t)((ref_buff_len + 1) * sizeof(char)));
         die_on_alloc_fail(ref_buff);
 
-        strncpy(ref_buff, reference_fn, rec_buff_size);
-        strncat(ref_buff, ".fai", strlen(".fai"));
+        strcpy(ref_buff, reference_fn);
+        strcat(ref_buff, ".fai");
+        ref_buff[ref_buff_len] = '\0';
 
         if (hts_set_fai_filename(args->input_sf, ref_buff) != 0) {
             log_error("hts_set_fai_filename() failed for \"%s\".", ref_buff);

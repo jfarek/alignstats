@@ -22,14 +22,14 @@ report_element_t *report_element_init(char *key, char *value)
     len = strlen(key);
     new_key = malloc((size_t)((len + 1) * sizeof(char)));
     die_on_alloc_fail(new_key);
-    strncpy(new_key, key, len);
+    strcpy(new_key, key);
     new_key[len] = '\0';
 
     /* Value */
     len = strlen(value);
     new_value = malloc((size_t)((len + 1) * sizeof(char)));
     die_on_alloc_fail(new_value);
-    strncpy(new_value, value, len);
+    strcpy(new_value, value);
     new_value[len] = '\0';
 
     /* Report element */
