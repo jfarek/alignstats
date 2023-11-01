@@ -16,6 +16,9 @@ align_len_metrics_t *align_len_metrics_init()
 
     alm->length_map = tree_map_init();
 
+    /* Secondary read or QC failure */
+    alm->filter = BAM_FSECONDARY | BAM_FQCFAIL | BAM_FUNMAP;
+
     return alm;
 }
 
@@ -41,7 +44,7 @@ void align_len_process_record(bam1_t *rec, align_len_metrics_t *alm)
     uint32_t *cigar;
     tree_node_t *node;
 
-    if (!(rec->core.flag & BAM_FUNMAP)) {
+    if (!(rec->core.flag & alm->filter)) {
         num_s = 0;
         cigar = bam_get_cigar(rec);
 

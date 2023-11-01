@@ -15,6 +15,9 @@ struct align_len_metrics {
     uint64_t mode;          /* Mode alignment length */
     uint64_t sum_sq;
     tree_map_t *length_map; /* Treemap of alignment lengths */
+
+    /* Filter reads */
+    uint16_t filter;
 };
 typedef struct align_len_metrics align_len_metrics_t;
 
