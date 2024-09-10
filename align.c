@@ -115,9 +115,13 @@ void align_process_record(bam1_t *rec, align_metrics_t *am, bool process_cigar)
 
                         /* for each aligned base check qual and increment pos */
                         while (pos < end_pos) {
-                            if (qual[pos++] >= 20) {
+                            if (qual[pos] >= 20) {
                                 ++am->b_q20;
+                                if (qual[pos] >= 30) {
+                                    ++am->b_q30;
+                                }
                             }
+                            pos++;
                         }
                         break;
                     default:
@@ -332,5 +336,13 @@ void align_report(report_t *report, align_metrics_t *am, read_type_t rt, char *k
 
     copy_to_buffer(key_start, "Q20BasesPct", copy_size);
     print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_q20, am->b_aligned);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "Q30Bases", copy_size);
+    snprintf(value_buffer, REPORT_BUFFER_SIZE, "%lu", am->b_q30);
+    report_add_key_value(report, key_buffer, value_buffer);
+
+    copy_to_buffer(key_start, "Q30BasesPct", copy_size);
+    print_pct(value_buffer, REPORT_BUFFER_SIZE, am->b_q30, am->b_aligned);
     report_add_key_value(report, key_buffer, value_buffer);
 }

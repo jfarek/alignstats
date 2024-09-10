@@ -32,6 +32,7 @@ struct align_metrics {
     uint64_t b_soft_clipped;
     uint64_t b_exact_match;
     uint64_t b_q20;
+    uint64_t b_q30;
 
     /* Filter reads */
     uint16_t filter;
