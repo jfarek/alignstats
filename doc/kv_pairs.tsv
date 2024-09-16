@@ -38,6 +38,8 @@ PerfectBases	Integer	Sum of bases in PerfectBases
 PerfectBasesPct	Float	Bases in PerfectBases as percentage of MappedBases
 Q20Bases	Integer	Number of bases with quality scores of at least 20
 Q20BasesPct	Float	Bases with quality scores of at least 20 as percentage of AlignedBases
+Q30Bases	Integer	Number of bases with quality scores of at least 30
+Q30BasesPct	Float	Bases with quality scores of at least 30 as percentage of AlignedBases
 R1YieldReads	Integer	Total number of reads for R1
 R1YieldBases	Integer	Total number of bases for R1
 R1UnmappedReads	Integer	Number of unmapped reads for R1
@@ -68,6 +70,8 @@ R1PerfectBases	Integer	Sum of bases in PerfectBases for R1
 R1PerfectBasesPct	Float	Bases in PerfectBases as percentage of MappedBases for R1
 R1Q20Bases	Integer	Number of bases with quality scores of at least 20 for R1
 R1Q20BasesPct	Float	Bases with quality scores of at least 20 as percentage of AlignedBases for R1
+R1Q30Bases	Integer	Number of bases with quality scores of at least 30 for R1
+R1Q30BasesPct	Float	Bases with quality scores of at least 30 as percentage of AlignedBases for R1
 R2YieldReads	Integer	Total number of reads for R2
 R2YieldBases	Integer	Total number of bases for R2
 R2UnmappedReads	Integer	Number of unmapped reads for R2
@@ -98,6 +102,8 @@ R2PerfectBases	Integer	Sum of bases in PerfectBases for R2
 R2PerfectBasesPct	Float	Bases in PerfectBases as percentage of MappedBases for R2
 R2Q20Bases	Integer	Number of bases with quality scores of at least 20 for R2
 R2Q20BasesPct	Float	Bases with quality scores of at least 20 as percentage of AlignedBases for R2
+R2Q30Bases	Integer	Number of bases with quality scores of at least 30 for R2
+R2Q30BasesPct	Float	Bases with quality scores of at least 30 as percentage of AlignedBases for R2
 AlignedReadLengthMean	Float	Mean alignment length
 AlignedReadLengthMedian	Integer	Median alignment length
 AlignedReadLengthMode	Integer	Mode alignment length

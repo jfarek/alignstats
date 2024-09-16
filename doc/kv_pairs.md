@@ -49,6 +49,8 @@ table, th, td {
 <tr><td>PerfectBasesPct</td><td>Float</td><td>Bases in PerfectBases as percentage of MappedBases</td></tr>
 <tr><td>Q20Bases</td><td>Integer</td><td>Number of bases with quality scores of at least 20</td></tr>
 <tr><td>Q20BasesPct</td><td>Float</td><td>Bases with quality scores of at least 20 as percentage of AlignedBases</td></tr>
+<tr><td>Q30Bases</td><td>Integer</td><td>Number of bases with quality scores of at least 30</td></tr>
+<tr><td>Q30BasesPct</td><td>Float</td><td>Bases with quality scores of at least 30 as percentage of AlignedBases</td></tr>
 <tr><td>R1YieldReads</td><td>Integer</td><td>Total number of reads for R1</td></tr>
 <tr><td>R1YieldBases</td><td>Integer</td><td>Total number of bases for R1</td></tr>
 <tr><td>R1UnmappedReads</td><td>Integer</td><td>Number of unmapped reads for R1</td></tr>
@@ -79,6 +81,8 @@ table, th, td {
 <tr><td>R1PerfectBasesPct</td><td>Float</td><td>Bases in PerfectBases as percentage of MappedBases for R1</td></tr>
 <tr><td>R1Q20Bases</td><td>Integer</td><td>Number of bases with quality scores of at least 20 for R1</td></tr>
 <tr><td>R1Q20BasesPct</td><td>Float</td><td>Bases with quality scores of at least 20 as percentage of AlignedBases for R1</td></tr>
+<tr><td>R1Q30Bases</td><td>Integer</td><td>Number of bases with quality scores of at least 30 for R1</td></tr>
+<tr><td>R1Q30BasesPct</td><td>Float</td><td>Bases with quality scores of at least 30 as percentage of AlignedBases for R1</td></tr>
 <tr><td>R2YieldReads</td><td>Integer</td><td>Total number of reads for R2</td></tr>
 <tr><td>R2YieldBases</td><td>Integer</td><td>Total number of bases for R2</td></tr>
 <tr><td>R2UnmappedReads</td><td>Integer</td><td>Number of unmapped reads for R2</td></tr>
@@ -109,6 +113,8 @@ table, th, td {
 <tr><td>R2PerfectBasesPct</td><td>Float</td><td>Bases in PerfectBases as percentage of MappedBases for R2</td></tr>
 <tr><td>R2Q20Bases</td><td>Integer</td><td>Number of bases with quality scores of at least 20 for R2</td></tr>
 <tr><td>R2Q20BasesPct</td><td>Float</td><td>Bases with quality scores of at least 20 as percentage of AlignedBases for R2</td></tr>
+<tr><td>R2Q30Bases</td><td>Integer</td><td>Number of bases with quality scores of at least 30 for R2</td></tr>
+<tr><td>R2Q30BasesPct</td><td>Float</td><td>Bases with quality scores of at least 30 as percentage of AlignedBases for R2</td></tr>
 <tr><td>AlignedReadLengthMean</td><td>Float</td><td>Mean alignment length</td></tr>
 <tr><td>AlignedReadLengthMedian</td><td>Integer</td><td>Median alignment length</td></tr>
 <tr><td>AlignedReadLengthMode</td><td>Integer</td><td>Mode alignment length</td></tr>

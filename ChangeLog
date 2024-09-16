@@ -1,5 +1,11 @@
 ChangeLog
 
+AlignStats v0.11 (16 Sep 2024)
+
+- Add metrics for Q30 bases.
+- In alignment length report, add filter for secondary, QC fail, and unmapped
+reads.
+
 AlignStats v0.10 (9 Jun 2022)
 
 - Correct DuplicateBasesPct calculation as the sum of bases in duplicate reads
